@@ -1,0 +1,169 @@
+{
+  "id": "com.tibber",
+  "version": "0.0.1",
+  "compatibility": ">=1.5.0",
+  "author": {
+    "name": "Espen Ljosland",
+    "email": "espen@ljosland.com"
+  },
+  "sdk": 2,
+  "name": {
+    "en": "Tibber"
+  },
+  "description": {
+    "en": "Tibber integration"
+  },
+  "category": [
+    "climate"
+  ],
+  "permissions": [],
+  "images": {
+    "large": "/assets/images/large.png",
+    "small": "/assets/images/small.png"
+  },
+  "capabilities": {
+    "price_total": {
+      "type": "number",
+      "title": {
+        "en": "Price now"
+      },
+      "getable": true,
+      "setable": false
+    }
+  },
+  "drivers": [
+    {
+      "id": "home",
+      "name": {
+        "en": "Home"
+      },
+      "capabilities": [
+        "meter_power",
+        "price_total"
+      ],
+      "class": "other",
+      "pair": [
+        {
+          "id": "list_devices",
+          "template": "list_devices",
+          "navigation": {
+            "next": "add_devices"
+          }
+        },
+        {
+          "id": "add_devices",
+          "template": "add_devices"
+        }
+      ],
+      "images": {
+        "large": "/drivers/home/assets/images/large.png",
+        "small": "/drivers/home/assets/images/small.png"
+      }
+    }
+  ],
+  "flow": {
+    "triggers" : [
+      {
+        "id":"price_changed",
+        "title": {
+          "en": "Price changed"
+        },
+        "tokens": [
+          {
+            "name": "total",
+            "type": "number",
+            "title": {
+              "en": "total"
+            }
+          },
+          {
+            "name": "energy",
+            "type": "number",
+            "title": {
+              "en": "energy"
+            }
+          },
+          {
+            "name": "tax",
+            "type": "number",
+            "title": {
+              "en": "tax"
+            }
+          }
+        ],
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=home"
+          }
+        ]
+      },
+      {
+        "id":"consumption_report",
+        "title": {
+          "en": "Consumption report last hour"
+        },
+        "tokens": [
+          {
+            "name": "consumption",
+            "type": "number",
+            "title": {
+              "en": "consumption"
+            }
+          },
+          {
+            "name": "totalCost",
+            "type": "number",
+            "title": {
+              "en": "total cost"
+            }
+          },
+          {
+            "name": "unitCost",
+            "type": "number",
+            "title": {
+              "en": "unit cost"
+            }
+          },
+          {
+            "name": "unitPrice",
+            "type": "number",
+            "title": {
+              "en": "unit price"
+            }
+          }
+        ],
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=home"
+          }
+        ]
+      }
+    ],
+    "conditions": [
+      {
+        "id": "current_price_below",
+        "title": {
+          "en": "Current price !{{below|above}}"
+        },
+        "args": [
+          {
+            "name": "price",
+            "type": "number",
+            "placeholder": {
+              "en": "price"
+            }
+          },
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=home"
+          }
+        ]
+      }
+    ]
+  }
+}

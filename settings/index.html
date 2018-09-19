@@ -1,0 +1,50 @@
+<!doctype html>
+<html>
+<head>
+	<script type="text/javascript" src="/homey.js" data-origin="settings"></script>
+</head>
+<body>
+  <h1>Tibber Settings</h1>
+	<fieldset>
+		<legend>Settings</legend>
+		<div class="field row">
+			<label for="token">Access token</label>
+			<input id="token" type="text" value="" />
+		</div>
+		<div class="field row">
+			<label>Get access token</label>
+			<span>https://developer.tibber.com/settings/accesstoken</span>
+		</div>
+	</fieldset>
+	<button id="save" class="left">Save</button>
+	
+	<script type="text/javascript">
+
+	function onHomeyReady(Homey) {
+        var tokenElement = document.getElementById('token');
+        var saveElement = document.getElementById('save');
+
+        Homey.get('token', function (err, name) {
+            if (err) return Homey.alert(err);
+            tokenElement.value = name;
+        });
+
+        saveElement.addEventListener('click', function (e) {
+            Homey.api('POST', '/authenticate', {
+                'token': tokenElement.value
+            }, function (err, result) {
+                if (err) return Homey.alert(err);
+
+                Homey.set('token', tokenElement.value, function (err) {
+                    if (err) return Homey.alert(err);
+                });
+
+                Homey.alert("Settings saved");
+            });
+        });
+
+        Homey.ready();
+    }
+	</script>
+ </body>
+</html>
