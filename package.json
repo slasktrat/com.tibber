@@ -1,6 +1,6 @@
 {
   "name": "com.tibber",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "Integration with Tibber",
   "main": "app.js",
   "scripts": {

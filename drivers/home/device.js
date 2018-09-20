@@ -34,6 +34,7 @@ class MyDevice extends Homey.Device {
             this.log('Triggering price_changed', priceInfo);
 
             if(priceInfo.total !== null) {
+                this.setCapabilityValue("price_total", priceInfo.total).catch(this.error);
                 let priceLogger = await this._createGetLog(this._insightId + 'price', {
                     label: `${this._deviceLabel} price`,
                     type: 'number',
@@ -50,6 +51,7 @@ class MyDevice extends Homey.Device {
             this.log('Triggering consumption_report', consumption);
 
             if(consumption.consumption !== null) {
+                this.setCapabilityValue("meter_power", consumption.consumption).catch(this.error);
                 let consumptionLogger = await this._createGetLog(this._insightId + 'consumption', {
                     label: `${this._deviceLabel} consumption`,
                     type: 'number',

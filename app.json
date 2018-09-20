@@ -1,6 +1,6 @@
 {
   "id": "com.tibber",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "compatibility": ">=1.5.0",
   "author": {
     "name": "Espen Ljosland",
@@ -14,7 +14,7 @@
     "en": "Tibber integration"
   },
   "category": [
-    "climate"
+    "energy"
   ],
   "permissions": [],
   "images": {
@@ -25,7 +25,7 @@
     "price_total": {
       "type": "number",
       "title": {
-        "en": "Price now"
+        "en": "Current price"
       },
       "getable": true,
       "setable": false
@@ -37,10 +37,42 @@
       "name": {
         "en": "Home"
       },
+      "mobile": {
+         "components": [
+             {
+                 "id": "icon",
+                 "capabilities": []
+             },
+             {
+                 "id": "sensor",
+                 "capabilities": [
+                     "meter_power"
+                 ]
+             },
+             {
+                 "id": "sensor",
+               "options": {
+                 "icons": {
+                   "price_total": "/drivers/home/assets/dollar.svg"
+                 }
+               },
+                 "capabilities": [
+                     "price_total"
+                 ]
+             }
+         ]
+      },
       "capabilities": [
         "meter_power",
         "price_total"
       ],
+      "capabilitiesOptions": {
+        "meter_power": {
+          "title": {
+            "en": "Consumption prev hour"
+          }
+        }
+      },
       "class": "other",
       "pair": [
         {
