@@ -28,6 +28,8 @@ class MyDevice extends Homey.Device {
 
     async onData(data) {
         const priceInfo = _.get(data, 'currentSubscription.priceInfo.current');
+        const loggerPrefix = this.getDriver().getDevices().length > 1 ? (`${this._deviceLabel} `) : '';
+
         if(_.get(priceInfo, 'startsAt') !== _.get(this._lastPrice, 'startsAt')) {
         	this._lastPrice = priceInfo;
             this._priceChangedTrigger.trigger(this, priceInfo);
@@ -36,39 +38,68 @@ class MyDevice extends Homey.Device {
             if(priceInfo.total !== null) {
                 this.setCapabilityValue("price_total", priceInfo.total).catch(this.error);
                 let priceLogger = await this._createGetLog(this._insightId + 'price', {
-                    label: `${this._deviceLabel} price`,
+                    label: `${loggerPrefix}Current price`,
                     type: 'number',
                     decimals: true
                 });
-                priceLogger.createEntry(priceInfo.total, moment(priceInfo.startsAt).toDate());
+                priceLogger.createEntry(priceInfo.total, moment(priceInfo.startsAt).toDate()).catch();
             }
 		}
 
-		const consumption = _.get(data, 'consumption.nodes[0]');
-        if(_.get(consumption, 'from') !== _.get(this._lastConsumptionReport, 'from')) {
-            this._lastConsumptionReport = consumption;
-            this._consumptionReportTrigger.trigger(this, consumption);
-            this.log('Triggering consumption_report', consumption);
+		const dailyConsumption = _.get(data, 'daily.nodes[0]');
+        if(_.get(dailyConsumption, 'from') !== _.get(this._lastConsumptionReport, 'from')) {
+            this._lastConsumptionReport = dailyConsumption;
+            this._consumptionReportTrigger.trigger(this, dailyConsumption);
+            this.log('Triggering consumption_report', dailyConsumption);
 
-            if(consumption.consumption !== null) {
-                this.setCapabilityValue("meter_power", consumption.consumption).catch(this.error);
-                let consumptionLogger = await this._createGetLog(this._insightId + 'consumption', {
-                    label: `${this._deviceLabel} consumption`,
+            if(dailyConsumption.consumption !== null) {
+                this.setCapabilityValue("meter_power", dailyConsumption.consumption).catch(this.error);
+                let consumptionLogger = await this._createGetLog(this._insightId + 'dailyConsumption', {
+                    label: `${loggerPrefix}Daily consumption`,
                     type: 'number',
                     decimals: true
                 });
-                consumptionLogger.createEntry(consumption.consumption, moment(consumption.to).toDate());
+                consumptionLogger.createEntry(dailyConsumption.consumption, moment(dailyConsumption.to).toDate()).catch();
             }
 
-            if(consumption.totalCost !== null) {
+            if(dailyConsumption.totalCost !== null) {
+                // this.setCapabilityValue("cost_yesterday", dailyConsumption.totalCost).catch(this.error);
+
                 let costLogger = await this._createGetLog(this._insightId + 'cost', {
-                    label: `${this._deviceLabel} cost`,
+                    label: `${loggerPrefix}Daily total cost`,
                     type: 'number',
                     decimals: true
                 });
-                costLogger.createEntry(consumption.totalCost, moment(consumption.to).toDate());
+                costLogger.createEntry(dailyConsumption.totalCost, moment(dailyConsumption.to).toDate()).catch();
             }
         }
+
+        const lastLoggedHourlyConsumption = Homey.ManagerSettings.get('lastLoggerHourlyConsumption');
+        const hourlyConsumptions = _.get(data, 'hourly.nodes');
+        _.each(hourlyConsumptions, async hourlyConsumption => {
+            if(hourlyConsumption.consumption !== null ) {
+                if(lastLoggedHourlyConsumption && moment(hourlyConsumption.to) <= moment(lastLoggedHourlyConsumption))
+                    return;
+
+                Homey.ManagerSettings.set('lastLoggerHourlyConsumption', hourlyConsumption.to);
+
+                this.log('Got hourly consumption', hourlyConsumption);
+                let consumptionLogger = await this._createGetLog(this._insightId + 'hourlyConsumption', {
+                    label: `${loggerPrefix}Hourly consumption`,
+                    type: 'number',
+                    decimals: true
+                });
+
+                consumptionLogger.createEntry(hourlyConsumption.consumption, moment(hourlyConsumption.to).toDate()).catch();
+
+                let costLogger = await this._createGetLog(this._insightId + 'cost', {
+                    label: `${loggerPrefix}Hourly total cost`,
+                    type: 'number',
+                    decimals: true
+                });
+                costLogger.createEntry(hourlyConsumption.totalCost, moment(hourlyConsumption.to).toDate()).catch();
+            }
+        });
     }
 
     async _createGetLog(name, options) {

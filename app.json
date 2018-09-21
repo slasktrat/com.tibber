@@ -1,6 +1,6 @@
 {
   "id": "com.tibber",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "compatibility": ">=1.5.0",
   "author": {
     "name": "Espen Ljosland",
@@ -29,6 +29,22 @@
       },
       "getable": true,
       "setable": false
+    },
+    "consumption_yesterday": {
+      "type": "number",
+      "title": {
+        "en": "Consumption yesterday"
+      },
+      "getable": true,
+      "setable": false
+    },
+    "cost_yesterday": {
+      "type": "number",
+      "title": {
+        "en": "Cost yesterday"
+      },
+      "getable": true,
+      "setable": false
     }
   },
   "drivers": [
@@ -38,39 +54,48 @@
         "en": "Home"
       },
       "mobile": {
-         "components": [
-             {
-                 "id": "icon",
-                 "capabilities": []
-             },
-             {
-                 "id": "sensor",
-                 "capabilities": [
-                     "meter_power"
-                 ]
-             },
-             {
-                 "id": "sensor",
-               "options": {
-                 "icons": {
-                   "price_total": "/drivers/home/assets/dollar.svg"
-                 }
-               },
-                 "capabilities": [
-                     "price_total"
-                 ]
-             }
-         ]
+        "components": [
+          {
+            "id": "icon",
+            "capabilities": []
+          },
+          {
+            "id": "sensor",
+            "capabilities": [
+              "meter_power"
+            ]
+          },
+          {
+            "id": "sensor",
+            "options": {
+              "icons": {
+                "price_total": "/drivers/home/assets/dollar.svg"
+              }
+            },
+            "capabilities": [
+              "price_total"
+            ]
+          }
+        ]
       },
       "capabilities": [
         "meter_power",
+        "consumption_yesterday",
+        "cost_yesterday",
         "price_total"
       ],
       "capabilitiesOptions": {
         "meter_power": {
+          "preventInsights": true,
           "title": {
-            "en": "Consumption prev hour"
+            "en": "Consumption yesterday"
           }
+        },
+        "cost_yesterday": {
+          "preventInsights": true
+        },
+        "price_total": {
+          "preventInsights": true
         }
       },
       "class": "other",
@@ -134,7 +159,7 @@
       {
         "id":"consumption_report",
         "title": {
-          "en": "Consumption report last hour"
+          "en": "Consumption report"
         },
         "tokens": [
           {

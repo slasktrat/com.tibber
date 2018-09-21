@@ -8,6 +8,7 @@ class TibberApp extends Homey.App {
 	
 	onInit() {
         this._tibberHomeDriver = Homey.ManagerDrivers.getDriver('home');
+
 		this.log('Tibber app is running...');
 
 		this._initTibber()
@@ -15,6 +16,13 @@ class TibberApp extends Homey.App {
             .catch(e => console.warn('Tibber not initialized', e));
 
         setInterval(this.fetchData.bind(this), 120 * 1000);
+
+        let v = Homey.ManagerSettings.get('v');
+        if(!v) {
+            this.log('Cleaning logs');
+            Homey.ManagerSettings.set('v', 1);
+            this.cleanupLogs();
+        }
 	}
 
     isConnected() {
@@ -32,6 +40,14 @@ class TibberApp extends Homey.App {
                 homeyDevice.onData.call(homeyDevice, home);
             });
         }
+    }
+
+    async cleanupLogs() {
+        let logs = await Homey.ManagerInsights.getLogs();
+        _.each(logs, async log => {
+            console.log('Deleting log',log.name);
+            await Homey.ManagerInsights.deleteLog(log);
+        })
     }
 
 	async fetchData() {

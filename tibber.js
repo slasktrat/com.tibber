@@ -15,15 +15,7 @@ const query = `{
         postalCode
         city
       }
-      owner {
-        firstName
-        lastName
-        contactInfo {
-          email
-          mobile
-        }
-      }
-      consumption(resolution: HOURLY, last: 1) {
+      daily: consumption(resolution: DAILY, last: 1) {
         nodes {
           from
           to
@@ -33,6 +25,14 @@ const query = `{
           unitPriceVAT
           consumption
           consumptionUnit
+        }
+      },
+      hourly: consumption(resolution: HOURLY, last: 25) {
+        nodes {
+          from
+          to
+          totalCost
+          consumption
         }
       }
       currentSubscription {
