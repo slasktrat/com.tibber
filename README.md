@@ -13,10 +13,7 @@ Integration with Tibber
 
 ## Release notes
 
-#### 0.0.5
-- Added missing environment variables
-
-#### 0.0.4
+#### 0.0.6
 - Implemented OAuth for easier authentication 
 
 #### 0.0.3

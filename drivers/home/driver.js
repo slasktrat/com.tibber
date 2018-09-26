@@ -24,15 +24,9 @@ class MyDriver extends Homey.Driver {
         let myOAuth2Callback = new Homey.CloudOAuth2Callback(apiAuthUrl);
         myOAuth2Callback
             .on('url', url => {
-                this.log('on.url', url);
-                // dend the URL to the front-end to open a popup
                 socket.emit('url', url);
             })
             .on('code', code => {
-                this.log('Got code', code);
-                // Homey.ManagerSettings.set('token', code);
-                // tell the front-end we're done
-                // Make request to api to fetch access_token
                 request.post({
                     url: `${apiBaseUrl}/connect/token`,
                     form: {
@@ -42,27 +36,22 @@ class MyDriver extends Homey.Driver {
                         redirect_uri: redirectUrl,
                         code: code,
                     },
-                }, (err, response, body) => {
+                }, async (err, response, body) => {
                     if (err || response.statusCode !== 200) {
                         console.error('request failed', err);
-                        Homey.ManagerApi.realtime('authorized', false);
+                        socket.emit('error', new Error(`Request failed with code ${response.statusCode}`));
                         return Homey.app.error('api -> failed to fetch tokens', err || response.statusCode);
                     }
 
-                    // Trigger realtime event
                     let params = JSON.parse(body);
-                    console.dir(params);
-                    // Store tokens in settings
                     try {
                         Homey.ManagerSettings.set('token', params.access_token);
                         Homey.ManagerSettings.set('token_expires_in', params.expires_in);
 
-                        tibber.init(params.access_token);
-
+                        await tibber.init(params.access_token);
                         socket.emit('authorized');
-                        Homey.ManagerApi.realtime('authorized', true);
                     } catch (err) {
-                        Homey.ManagerApi.realtime('authorized', false);
+                        socket.emit('error', new Error(`Error saving tokens`));
                         Homey.app.error('api -> error saving tokens:', err);
                     }
                 });
@@ -70,15 +59,13 @@ class MyDriver extends Homey.Driver {
             .generate()
             .catch( err => {
             	console.error(err);
-            	console.dir(err);
                 socket.emit('error', err);
             });
     }
 
 	onPairListDevices(data, callback) {
-	    console.log('onPairListDevices');
 		if (!Homey.app.isConnected()) {
-			callback(new Error("Please enter your access token in the settings page."));
+			callback(new Error("Unable to load your home(s)."));
 		}
 		else
 		{
