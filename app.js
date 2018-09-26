@@ -58,7 +58,7 @@ class TibberApp extends Homey.App {
             return data;
         }
         catch(e) {
-	        this.error('Error fetching data', e);
+	        this.log('Error fetching data', e);
         }
 	}
 

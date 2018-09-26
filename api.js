@@ -1,5 +1,9 @@
 'use strict';
-const Homey = require('homey');
+const   Homey           = require('homey'),
+        tibber          = require('tibber');
+
+
+
 module.exports = [
     {
         method: 'POST',
@@ -12,5 +16,17 @@ module.exports = [
                 return callback(err);
             }
         } 
-    }
+    },
+    {
+        method: 'POST',
+        path: '/deauthorize',
+        fn: (args, callback) => {
+            console.log('deauthorizing');
+            tibber.deinit();
+            Homey.ManagerSettings.unset('token');
+            Homey.ManagerSettings.set('authorized', false);
+            Homey.ManagerApi.realtime('authorized', false);
+            this.emit('authenticated', false);
+        },
+    },
 ];

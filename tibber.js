@@ -2,6 +2,7 @@ const { GraphQLClient }           = require('graphql-request');
 
 module.exports = {
     init:init,
+    deinit: deinit,
     getData: getData,
     isConnected: isConnected
 };
@@ -63,6 +64,11 @@ function init(token) {
     return getData();
 }
 
+function deinit() {
+    _client = undefined;
+    _isConnected = false;
+}
+
 function isConnected() {
     return _isConnected;
 }
@@ -77,6 +83,6 @@ async function getData() {
                     })
                     .catch(e => {
                         _isConnected = false;
-                        this.error('Error while fetching data', e);
+                        console.error('Error while fetching data', e);
                     });
 }

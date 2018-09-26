@@ -2,8 +2,6 @@
 
 Integration with Tibber
 
-First get an [access token](https://developer.tibber.com/settings/accesstoken) and paste it into the App settings page
-
 ## Flow
 
 #### Supported flow triggers
@@ -14,6 +12,9 @@ First get an [access token](https://developer.tibber.com/settings/accesstoken) a
 - Current price below/above  
 
 ## Release notes
+
+#### 0.0.4
+- Implemented OAuth for easier authentication 
 
 #### 0.0.3
 - Replaced "Consumption prev hour" with "Consumption yesterday" as hourly consumption is only available after day has ended
