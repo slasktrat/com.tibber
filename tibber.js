@@ -16,7 +16,31 @@ const query = `{
         postalCode
         city
       }
-      daily: consumption(resolution: DAILY, last: 1) {
+      currentSubscription {
+        status
+        priceInfo {
+          current {
+            total
+            energy
+            tax
+            startsAt
+          }
+        }
+      }
+    }
+  }
+}`;
+
+const queryFull = `{
+  viewer {
+    homes {
+      timeZone
+      address {
+        address1
+        postalCode
+        city
+      }
+      daily: consumption(resolution: DAILY, last: 14) {
         nodes {
           from
           to
@@ -28,7 +52,7 @@ const query = `{
           consumptionUnit
         }
       },
-      hourly: consumption(resolution: HOURLY, last: 25) {
+      hourly: consumption(resolution: HOURLY, last: 200) {
         nodes {
           from
           to
@@ -73,10 +97,10 @@ function isConnected() {
     return _isConnected;
 }
 
-async function getData() {
+async function getData(full) {
     if(!_client)
         throw new Error("Access token not set");
-    return _client.request(query)
+    return _client.request(full ? queryFull : query)
                     .then(data => {
                         _isConnected = true;
                         return data;

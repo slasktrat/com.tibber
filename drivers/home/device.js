@@ -46,24 +46,23 @@ class MyDevice extends Homey.Device {
             }
 		}
 
-		const dailyConsumption = _.get(data, 'daily.nodes[0]');
-        if(_.get(dailyConsumption, 'from') !== _.get(this._lastConsumptionReport, 'from')) {
-            this._lastConsumptionReport = dailyConsumption;
-            this._consumptionReportTrigger.trigger(this, dailyConsumption);
-            this.log('Triggering consumption_report', dailyConsumption);
+        const lastLoggedDailyConsumption = Homey.ManagerSettings.get('lastLoggedDailyConsumption');
+		const dailyConsumptions = _.get(data, 'daily.nodes');
+        _.each(dailyConsumptions, async dailyConsumption => {
+            if(dailyConsumption.consumption !== null ) {
+                if (lastLoggedDailyConsumption && moment(dailyConsumption.to) <= moment(lastLoggedDailyConsumption))
+                    return;
 
-            if(dailyConsumption.consumption !== null) {
-                this.setCapabilityValue("meter_power", dailyConsumption.consumption).catch(this.error);
+                Homey.ManagerSettings.set('lastLoggedDailyConsumption', dailyConsumption.to);
+
+                this.log('Got daily consumption', dailyConsumption);
                 let consumptionLogger = await this._createGetLog(this._insightId + 'dailyConsumption', {
                     label: `${loggerPrefix}Daily consumption`,
                     type: 'number',
                     decimals: true
                 });
-                consumptionLogger.createEntry(dailyConsumption.consumption, moment(dailyConsumption.to).toDate()).catch();
-            }
 
-            if(dailyConsumption.totalCost !== null) {
-                // this.setCapabilityValue("cost_yesterday", dailyConsumption.totalCost).catch(this.error);
+                consumptionLogger.createEntry(dailyConsumption.consumption, moment(dailyConsumption.to).toDate()).catch();
 
                 let costLogger = await this._createGetLog(this._insightId + 'cost', {
                     label: `${loggerPrefix}Daily total cost`,
@@ -72,7 +71,7 @@ class MyDevice extends Homey.Device {
                 });
                 costLogger.createEntry(dailyConsumption.totalCost, moment(dailyConsumption.to).toDate()).catch();
             }
-        }
+        });
 
         const lastLoggedHourlyConsumption = Homey.ManagerSettings.get('lastLoggerHourlyConsumption');
         const hourlyConsumptions = _.get(data, 'hourly.nodes');

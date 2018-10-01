@@ -13,6 +13,10 @@ Integration with Tibber
 
 ## Release notes
 
+#### 0.0.7
+- Removed consumption from mobile card as latest available data can be up to one week old
+- Improved consumption logging
+
 #### 0.0.6
 - Implemented OAuth for easier authentication 
 

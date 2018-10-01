@@ -1,6 +1,6 @@
 {
   "id": "com.tibber",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "compatibility": ">=1.5.0",
   "author": {
     "name": "Espen Ljosland",
@@ -85,15 +85,6 @@
         "price_total"
       ],
       "capabilitiesOptions": {
-        "meter_power": {
-          "preventInsights": true,
-          "title": {
-            "en": "Consumption yesterday"
-          }
-        },
-        "cost_yesterday": {
-          "preventInsights": true
-        },
         "price_total": {
           "preventInsights": true
         }

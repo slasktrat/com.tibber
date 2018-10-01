@@ -15,7 +15,8 @@ class TibberApp extends Homey.App {
             .then(this.updateDevices)
             .catch(e => console.warn('Tibber not initialized', e));
 
-        setInterval(this.fetchData.bind(this), 120 * 1000);
+        setInterval(this.fetchData.bind(this), 120 * 1000); //Every other minute
+        setInterval(this.fetchData.bind(this, [true]), 60 * 60 * 1000); //Every hour
 
         let v = Homey.ManagerSettings.get('v');
         if(!v) {
@@ -50,10 +51,10 @@ class TibberApp extends Homey.App {
         })
     }
 
-	async fetchData() {
+	async fetchData(full) {
 	    try {
-            this.log('Fetching data...');
-            let data = await tibber.getData();
+            this.log(`Fetching data (${!!full})...`);
+            let data = await tibber.getData(full);
             Homey.app.updateDevices(data);
             return data;
         }
