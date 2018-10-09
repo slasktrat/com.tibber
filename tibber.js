@@ -4,6 +4,7 @@ module.exports = {
     init:init,
     deinit: deinit,
     getData: getData,
+    sendPush: sendPush,
     isConnected: isConnected
 };
 
@@ -109,4 +110,22 @@ async function getData(full) {
                         _isConnected = false;
                         console.error('Error while fetching data', e);
                     });
+}
+
+async function sendPush(title, message) {
+    let push = `mutation{
+        sendPushNotification(input: {
+            title: "${title}",
+                message: "${message}",
+                screenToOpen: CONSUMPTION
+        }){
+            successful
+            pushedToNumberOfDevices
+        }
+    }`;
+    return _client.request(push)
+        .then(result => {
+            this.log('Push notification sent', result);
+        })
+        .catch(console.error);
 }

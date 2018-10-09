@@ -2,6 +2,7 @@
 
 const   Homey               = require('homey'),
         _                   = require('lodash'),
+        tibber              = require('../../tibber'),
 		moment				= require('moment');
 
 class MyDevice extends Homey.Device {
@@ -22,6 +23,11 @@ class MyDevice extends Homey.Device {
         this._currentPriceBelowCondition
             .register()
             .registerRunListener(args => args.price > _.get(this._lastPrice, 'total'));
+
+        this._sendPushNotificationAction = new Homey.FlowCardAction('sendPushNotification');
+        this._sendPushNotificationAction
+            .register()
+            .registerRunListener(args => tibber.sendPush(args.title, args.message));
 
         this.log(`Tibber device ${this.getName()} has been initialized`);
 	}
@@ -47,11 +53,22 @@ class MyDevice extends Homey.Device {
 		}
 
         const lastLoggedDailyConsumption = Homey.ManagerSettings.get('lastLoggedDailyConsumption');
+        const consumptionSinceLastReport = {
+            consumption:0,
+            totalCost:0,
+            unitCost:0,
+            unitPrice:0
+        };
 		const dailyConsumptions = _.get(data, 'daily.nodes');
         _.each(dailyConsumptions, async dailyConsumption => {
             if(dailyConsumption.consumption !== null ) {
                 if (lastLoggedDailyConsumption && moment(dailyConsumption.to) <= moment(lastLoggedDailyConsumption))
                     return;
+
+                consumptionSinceLastReport.consumption += dailyConsumption.consumption;
+                consumptionSinceLastReport.totalCost += dailyConsumption.totalCost;
+                consumptionSinceLastReport.unitCost += dailyConsumption.unitCost;
+                consumptionSinceLastReport.unitPrice += dailyConsumption.unitPrice;
 
                 Homey.ManagerSettings.set('lastLoggedDailyConsumption', dailyConsumption.to);
 
@@ -72,6 +89,9 @@ class MyDevice extends Homey.Device {
                 costLogger.createEntry(dailyConsumption.totalCost, moment(dailyConsumption.to).toDate()).catch();
             }
         });
+
+        if(consumptionSinceLastReport.consumption > 0)
+            this._consumptionReportTrigger.trigger(this, consumptionSinceLastReport);
 
         const lastLoggedHourlyConsumption = Homey.ManagerSettings.get('lastLoggerHourlyConsumption');
         const hourlyConsumptions = _.get(data, 'hourly.nodes');

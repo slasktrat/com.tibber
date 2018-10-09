@@ -1,6 +1,6 @@
 {
   "id": "com.tibber",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "compatibility": ">=1.5.0",
   "author": {
     "name": "Espen Ljosland",
@@ -213,6 +213,29 @@
             "name": "device",
             "type": "device",
             "filter": "driver_id=home"
+          }
+        ]
+      }
+    ],
+    "actions": [
+      {
+        "id": "sendPushNotification",
+        "title": {
+          "en": "Send Tibber push notification"
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=home"
+          },
+          {
+            "name": "title",
+            "type": "text"
+          },
+          {
+            "name": "message",
+            "type": "text"
           }
         ]
       }

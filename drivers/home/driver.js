@@ -12,8 +12,6 @@ class MyDriver extends Homey.Driver {
 	}
     onPair( socket ) {
         socket.on('list_devices', this.onPairListDevices);
-        if(Homey.app.isConnected())
-            return socket.emit('authorized');
 
 		let state = Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 10);
 		const redirectUrl = 'https://callback.athom.com/oauth2/callback/';
