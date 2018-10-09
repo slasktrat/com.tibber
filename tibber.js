@@ -125,7 +125,7 @@ async function sendPush(title, message) {
     }`;
     return _client.request(push)
         .then(result => {
-            this.log('Push notification sent', result);
+            console.log('Push notification sent', result);
         })
         .catch(console.error);
 }

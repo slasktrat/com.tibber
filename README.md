@@ -13,7 +13,7 @@ Integration with Tibber
 
 ## Release notes
 
-#### 0.0.8
+#### 0.0.9
 - Added action flow card: Send Tibber push notification (sends push notification through Tibber app)
 - Rewrote consumption report flow trigger card to report total consumption since last report, as consumption data is made available in variable intervals
 

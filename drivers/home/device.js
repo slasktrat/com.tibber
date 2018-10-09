@@ -53,23 +53,14 @@ class MyDevice extends Homey.Device {
 		}
 
         const lastLoggedDailyConsumption = Homey.ManagerSettings.get('lastLoggedDailyConsumption');
-        const consumptionSinceLastReport = {
-            consumption:0,
-            totalCost:0,
-            unitCost:0,
-            unitPrice:0
-        };
+        const consumptionsSinceLastReport = [];
 		const dailyConsumptions = _.get(data, 'daily.nodes');
         _.each(dailyConsumptions, async dailyConsumption => {
             if(dailyConsumption.consumption !== null ) {
                 if (lastLoggedDailyConsumption && moment(dailyConsumption.to) <= moment(lastLoggedDailyConsumption))
                     return;
 
-                consumptionSinceLastReport.consumption += dailyConsumption.consumption;
-                consumptionSinceLastReport.totalCost += dailyConsumption.totalCost;
-                consumptionSinceLastReport.unitCost += dailyConsumption.unitCost;
-                consumptionSinceLastReport.unitPrice += dailyConsumption.unitPrice;
-
+                consumptionsSinceLastReport.push(dailyConsumption);
                 Homey.ManagerSettings.set('lastLoggedDailyConsumption', dailyConsumption.to);
 
                 this.log('Got daily consumption', dailyConsumption);
@@ -90,8 +81,13 @@ class MyDevice extends Homey.Device {
             }
         });
 
-        if(consumptionSinceLastReport.consumption > 0)
-            this._consumptionReportTrigger.trigger(this, consumptionSinceLastReport);
+        if(consumptionsSinceLastReport.length > 0)
+            this._consumptionReportTrigger.trigger(this, {
+                consumption: _.sumBy(consumptionsSinceLastReport, 'consumption'),
+                totalCost: _.sumBy(consumptionsSinceLastReport, 'totalCost'),
+                unitCost: _.sumBy(consumptionsSinceLastReport, 'unitCost'),
+                unitPrice: _.meanBy(consumptionsSinceLastReport, 'unitPrice')
+            });
 
         const lastLoggedHourlyConsumption = Homey.ManagerSettings.get('lastLoggerHourlyConsumption');
         const hourlyConsumptions = _.get(data, 'hourly.nodes');
