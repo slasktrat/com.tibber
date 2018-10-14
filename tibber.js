@@ -1,131 +1,73 @@
-const { GraphQLClient }           = require('graphql-request');
+const   Homey 				        = require('homey'),
+        { GraphQLClient }           = require('graphql-request'),
+        queries                     = require('./queries');
 
 module.exports = {
     init:init,
-    deinit: deinit,
+    getHomes: getHomes,
     getData: getData,
     sendPush: sendPush,
-    isConnected: isConnected
+    setDefaultToken: setDefaultToken,
+    getDefaultToken: getDefaultToken
 };
 
-const query = `{
-  viewer {
-    homes {
-      timeZone
-      address {
-        address1
-        postalCode
-        city
-      }
-      currentSubscription {
-        status
-        priceInfo {
-          current {
-            total
-            energy
-            tax
-            startsAt
-          }
-        }
-      }
-    }
-  }
-}`;
-
-const queryFull = `{
-  viewer {
-    homes {
-      timeZone
-      address {
-        address1
-        postalCode
-        city
-      }
-      daily: consumption(resolution: DAILY, last: 14) {
-        nodes {
-          from
-          to
-          totalCost
-          unitCost
-          unitPrice
-          unitPriceVAT
-          consumption
-          consumptionUnit
-        }
-      },
-      hourly: consumption(resolution: HOURLY, last: 200) {
-        nodes {
-          from
-          to
-          totalCost
-          consumption
-        }
-      }
-      currentSubscription {
-        status
-        priceInfo {
-          current {
-            total
-            energy
-            tax
-            startsAt
-          }
-        }
-      }
-    }
-  }
-}`;
-
-let _client;
-let _isConnected;
-
+let _clients = [];
 function init(token) {
-    _client = new GraphQLClient('https://api.tibber.com/v1-beta/gql', {
+    if(!_clients[token])
+        _clients[token] = new GraphQLClient('https://api.tibber.com/v1-beta/gql', {
         headers: {
             Authorization: `Bearer ${token}`,
         },
     });
 
-    return getData();
+    return _clients[token];
 }
 
-function deinit() {
-    _client = undefined;
-    _isConnected = false;
-}
-
-function isConnected() {
-    return _isConnected;
-}
-
-async function getData(full) {
-    if(!_client)
+function getClient(token) {
+    if(!token)
+        token = getDefaultToken();
+    if(!token)
         throw new Error("Access token not set");
-    return _client.request(full ? queryFull : query)
+
+    return _clients[token] || init(token);
+}
+
+async function getHomes(token) {
+    let client = getClient(token);
+    return client.request(queries.getHomesQuery())
+        .then(data => {
+            return data;
+        })
+        .catch(e => {
+            console.error('Error while fetching data', e);
+        });
+}
+
+async function getData(token, homeId) {
+    let client = getClient(token);
+    return client.request(queries.getConsumptionQuery(homeId))
                     .then(data => {
-                        _isConnected = true;
                         return data;
                     })
                     .catch(e => {
-                        _isConnected = false;
                         console.error('Error while fetching data', e);
                     });
 }
 
-async function sendPush(title, message) {
-    let push = `mutation{
-        sendPushNotification(input: {
-            title: "${title}",
-                message: "${message}",
-                screenToOpen: CONSUMPTION
-        }){
-            successful
-            pushedToNumberOfDevices
-        }
-    }`;
-    return _client.request(push)
+async function sendPush(token, title, message) {
+    let client = getClient(token);
+    let push = queries.getPushMessage(title, message);
+    return client.request(push)
         .then(result => {
             console.log('Push notification sent', result);
         })
         .catch(console.error);
+}
+
+function setDefaultToken(token) {
+    Homey.ManagerSettings.set('token', token);
+}
+
+function getDefaultToken() {
+    return Homey.ManagerSettings.get('token');
 }

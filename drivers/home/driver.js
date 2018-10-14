@@ -43,9 +43,7 @@ class MyDriver extends Homey.Driver {
 
                     let params = JSON.parse(body);
                     try {
-                        Homey.ManagerSettings.set('token', params.access_token);
-                        Homey.ManagerSettings.set('token_expires_in', params.expires_in);
-
+                        tibber.setDefaultToken(params.access_token);
                         await tibber.init(params.access_token);
                         socket.emit('authorized');
                     } catch (err) {
@@ -62,28 +60,27 @@ class MyDriver extends Homey.Driver {
     }
 
 	onPairListDevices(data, callback) {
-		if (!Homey.app.isConnected()) {
-			callback(new Error("Unable to load your home(s)."));
-		}
-		else
-		{
-            Homey.app.fetchData()
-                .then(data => {
-                    let devices = _.map(_.get(data, 'viewer.homes'), home => {
-                        let address = _.get(home, 'address.address1');
-                        return {
-                            data: {id: address},
-                            name: address
-                        };
-                    });
+        tibber.getHomes()
+            .then(data => {
+                let devices = _.reject(_.map(_.get(data, 'viewer.homes'), home => {
+                    let isActive = _.get(home, 'currentSubscription.status') === 'running';
+                    if(!isActive)
+                        return null;
 
-                    callback(null, devices.sort(MyDriver._compareHomeyDevice));
-                })
-                .catch(e => {
-                    this.log('Error in onPairListDevices', e);
-                    callback(new Error("Failed to retrieve data."));
-                });
-		}
+                    _.assign(home, {t:tibber.getDefaultToken()});
+                    let address = _.get(home, 'address.address1');
+                    return {
+                        data: home,
+                        name: address
+                    };
+                }), _.isNull);
+
+                callback(null, devices.sort(MyDriver._compareHomeyDevice));
+            })
+            .catch(e => {
+                this.log('Error in onPairListDevices', e);
+                callback(new Error("Failed to retrieve data."));
+            });
 	}
 
 	static _compareHomeyDevice(a, b) {

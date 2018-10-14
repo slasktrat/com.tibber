@@ -61,12 +61,6 @@
           },
           {
             "id": "sensor",
-            "capabilities": [
-              "meter_power"
-            ]
-          },
-          {
-            "id": "sensor",
             "options": {
               "icons": {
                 "price_total": "/drivers/home/assets/dollar.svg"
@@ -75,17 +69,24 @@
             "capabilities": [
               "price_total"
             ]
+          },
+          {
+            "id": "sensor",
+            "capabilities": [
+              "measure_temperature"
+            ]
           }
         ]
       },
       "capabilities": [
-        "meter_power",
-        "consumption_yesterday",
-        "cost_yesterday",
-        "price_total"
+        "price_total",
+        "measure_temperature"
       ],
       "capabilitiesOptions": {
         "price_total": {
+          "preventInsights": true
+        },
+        "measure_temperature": {
           "preventInsights": true
         }
       },
@@ -140,6 +141,28 @@
             "type": "number",
             "title": {
               "en": "tax"
+            }
+          }
+        ],
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=home"
+          }
+        ]
+      },
+      {
+        "id":"temperature_changed",
+        "title": {
+          "en": "Temperature changed"
+        },
+        "tokens": [
+          {
+            "name": "temperature",
+            "type": "number",
+            "title": {
+              "en": "Temperature"
             }
           }
         ],
