@@ -2,13 +2,13 @@
 
 const 	Homey 				= require('homey'),
 		_                   = require('lodash'),
-		tibber              = require('../../tibber'),
-		request 			= require('request');
+		request 			= require('request'),
+        tibber              = require('../../tibber');
 
 class MyDriver extends Homey.Driver {
 	
 	onInit() {
-		this.log('Tibber driver driver has been initialized');
+		this.log('Tibber home driver has been initialized');
 	}
     onPair( socket ) {
         socket.on('list_devices', this.onPairListDevices);
@@ -41,14 +41,13 @@ class MyDriver extends Homey.Driver {
                         return Homey.app.error('api -> failed to fetch tokens', err || response.statusCode);
                     }
 
-                    let params = JSON.parse(body);
                     try {
+                        let params = JSON.parse(body);
                         tibber.setDefaultToken(params.access_token);
-                        await tibber.init(params.access_token);
                         socket.emit('authorized');
                     } catch (err) {
-                        socket.emit('error', new Error(`Error saving tokens`));
-                        Homey.app.error('api -> error saving tokens:', err);
+                        socket.emit('error', new Error(`Error fetching tokens`));
+                        Homey.app.error('api -> error fetching tokens:', err);
                     }
                 });
             })

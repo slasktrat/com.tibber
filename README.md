@@ -1,17 +1,34 @@
 # Tibber
 
-Integration with Tibber
+Integration with Tibber, now with Pulse support!
 
-## Flow
+## Flow cards
 
-#### Supported flow triggers
+### Device: Home
+#### Triggers
 - Price changed
 - Consumption report
+- Temperature changed
 
-#### Supported conditions
-- Current price below/above  
+#### Conditions
+- Current price below/above
+
+#### Actions
+- Send push notification (through Tibber app)
+
+### Device: Pulse
+#### Triggers
+- Power changed
+- Consumption since midnight changed
+- Cost since midnight changed
+  
 
 ## Release notes
+
+#### 0.1.0
+- Added Pulse support, with flow trigger cards for power, consumption since midnight and cost since midnight changed  
+- Removed unused capabilities and added outdoor temperature instead
+- Because of major rewrite, users of previous versions will need to remove and add their home again as a new device  
 
 #### 0.0.9
 - Added action flow card: Send Tibber push notification (sends push notification through Tibber app)

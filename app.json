@@ -1,6 +1,6 @@
 {
   "id": "com.tibber",
-  "version": "0.0.9",
+  "version": "0.1.0",
   "compatibility": ">=1.5.0",
   "author": {
     "name": "Espen Ljosland",
@@ -28,23 +28,21 @@
         "en": "Current price"
       },
       "getable": true,
-      "setable": false
+      "setable": false,
+      "units": {
+        "en": "kr"
+      }
     },
-    "consumption_yesterday": {
+    "accumulatedCost": {
       "type": "number",
       "title": {
-        "en": "Consumption yesterday"
+        "en": "Cost since midnight"
       },
       "getable": true,
-      "setable": false
-    },
-    "cost_yesterday": {
-      "type": "number",
-      "title": {
-        "en": "Cost yesterday"
-      },
-      "getable": true,
-      "setable": false
+      "setable": false,
+      "units": {
+        "en": "kr"
+      }
     }
   },
   "drivers": [
@@ -87,7 +85,10 @@
           "preventInsights": true
         },
         "measure_temperature": {
-          "preventInsights": true
+          "preventInsights": true,
+          "title": {
+            "en": "Outdoor"
+          }
         }
       },
       "class": "other",
@@ -112,6 +113,90 @@
         "large": "/drivers/home/assets/images/large.png",
         "small": "/drivers/home/assets/images/small.png"
       }
+    },
+    {
+      "id": "pulse",
+      "name": {
+        "en": "Pulse"
+      },
+      "mobile": {
+        "components": [
+          {
+            "id": "icon",
+            "capabilities": []
+          },
+          {
+            "id": "sensor",
+            "capabilities": [
+              "measure_power",
+              "meter_power"
+            ]
+          },
+          {
+            "id": "sensor",
+            "options": {
+              "icons": {
+                "accumulatedCost": "/drivers/pulse/assets/dollar.svg"
+              }
+            },
+            "capabilities": [
+              "accumulatedCost"
+            ]
+          }
+        ]
+      },
+      "capabilities": [
+        "measure_power",
+        "meter_power",
+        "accumulatedCost"
+      ],
+      "capabilitiesOptions": {
+        "meter_power": {
+          "title": {
+            "en": "Consumption since midnight"
+          }
+        }
+      },
+      "class": "other",
+      "pair": [
+        {
+          "id": "login_oauth2",
+          "template": "login_oauth2"
+        },
+        {
+          "id": "list_devices",
+          "template": "list_devices",
+          "navigation": {
+            "next": "add_devices"
+          }
+        },
+        {
+          "id": "add_devices",
+          "template": "add_devices"
+        }
+      ],
+      "images": {
+        "large": "/drivers/pulse/assets/images/large.png",
+        "small": "/drivers/pulse/assets/images/small.png"
+      },
+      "settings": [
+        {
+          "id": "pulse_throttle",
+          "type": "number",
+          "label": {
+            "en": "Update interval"
+          },
+          "hint": {
+            "en": "Set a limit to how often the values should update.\nRange: 5 - 3600 seconds, \nDefault: 30"
+          },
+          "value": 30,
+          "attr": {
+            "min": 5,
+            "max": 3600,
+            "step": 5
+          }
+        }
+      ]
     }
   ],
   "flow": {
@@ -214,6 +299,72 @@
             "name": "device",
             "type": "device",
             "filter": "driver_id=home"
+          }
+        ]
+      },
+      {
+        "id":"power_changed",
+        "title": {
+          "en": "Power changed"
+        },
+        "tokens": [
+          {
+            "name": "power",
+            "type": "number",
+            "title": {
+              "en": "Power"
+            }
+          }
+        ],
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=pulse"
+          }
+        ]
+      },
+      {
+        "id":"consumption_changed",
+        "title": {
+          "en": "Consumption since midnight changed"
+        },
+        "tokens": [
+          {
+            "name": "consumption",
+            "type": "number",
+            "title": {
+              "en": "Consumption"
+            }
+          }
+        ],
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=pulse"
+          }
+        ]
+      },
+      {
+        "id":"cost_changed",
+        "title": {
+          "en": "Cost since midnight changed"
+        },
+        "tokens": [
+          {
+            "name": "cost",
+            "type": "number",
+            "title": {
+              "en": "Cost"
+            }
+          }
+        ],
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=pulse"
           }
         ]
       }

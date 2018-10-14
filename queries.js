@@ -1,8 +1,11 @@
+const   gql                     = require('graphql-tag');
+
 module.exports = {
     getHomesQuery: getHomesQuery,
     getPriceQuery: getPriceQuery,
     getConsumptionQuery: getConsumptionQuery,
-    getPushMessage: getPushMessage
+    getPushMessage: getPushMessage,
+    getSubscriptionQuery: getSubscriptionQuery
 };
 
 function getHomesQuery() {
@@ -100,4 +103,20 @@ function getPushMessage(title, message) {
             pushedToNumberOfDevices
         }
     }`;
+}
+
+function getSubscriptionQuery(homeId) {
+    return gql`
+        subscription{
+              liveMeasurement(homeId:"${homeId}"){
+                timestamp
+                power
+                accumulatedConsumption
+                accumulatedCost
+                currency
+                minPower
+                averagePower
+                maxPower
+              }
+            }`;
 }

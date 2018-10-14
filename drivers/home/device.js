@@ -44,7 +44,7 @@ class MyDevice extends Homey.Device {
             .register()
             .registerRunListener(args => tibber.sendPush(this.getData().t, args.title, args.message));
 
-        this.log(`Tibber device ${this.getName()} has been initialized`);
+        this.log(`Tibber home device ${this.getName()} has been initialized`);
         return this.fetchData();
 	}
 
