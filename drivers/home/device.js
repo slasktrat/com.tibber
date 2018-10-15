@@ -49,6 +49,15 @@ class MyDevice extends Homey.Device {
         return this.fetchData();
 	}
 
+	onDeleted() {
+	    this.log('Device deleted:', this._deviceLabel);
+
+        Homey.ManagerSettings.set(`${this._insightId}_lastLoggedDailyConsumption`, undefined);
+        Homey.ManagerSettings.set(`${this._insightId}_lastLoggerHourlyConsumption`, undefined);
+
+        return Homey.app.cleanupLogs(this._insightId);
+    }
+
 	async getTemperature() {
 	    try {
 	        const weather = await yrno.getWeather(this._location);

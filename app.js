@@ -12,15 +12,17 @@ class TibberApp extends Homey.App {
         if(v !== 2) {
             this.log('Cleaning logs');
             Homey.ManagerSettings.set('v', 2);
-            this.cleanupLogs().catch(console.error);
+            this.cleanupLogs('*').catch(console.error);
         }
 	}
 
-    async cleanupLogs() {
+    async cleanupLogs(prefix) {
         let logs = await Homey.ManagerInsights.getLogs();
         _.each(logs, async log => {
-            console.log('Deleting log',log.name);
-            await Homey.ManagerInsights.deleteLog(log);
+            if(prefix === '*' || _.startsWith(log.name, prefix)) {
+                console.log('Deleting log', log.name);
+                await Homey.ManagerInsights.deleteLog(log);
+            }
         })
     }
 }
