@@ -14,6 +14,10 @@ const yrno = require('yr.no-forecast')({
 class MyDevice extends Homey.Device {
 	
 	onInit() {
+
+        if(!this.getData().address)
+            return this.setUnavailable("You will need to remove and add this home as new device");
+
         this._deviceId = this.getData().id;
         this._deviceLabel = this.getName();
         this._insightId = this._deviceLabel.replace(/[^a-z0-9]/ig,'_');
@@ -21,9 +25,6 @@ class MyDevice extends Homey.Device {
         this._lastTemperature = undefined;
         this._lastFetchedStartAt = undefined;
         this._location = { lat:this.getData().address.latitude, lon:this.getData().address.longitude };
-
-        if(!this.getData().address)
-            return this.setUnavailable("You will need to remove and add this home as new device");
 
         this._priceChangedTrigger = new Homey.FlowCardTriggerDevice('price_changed');
         this._priceChangedTrigger.register();
