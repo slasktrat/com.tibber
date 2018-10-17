@@ -7,11 +7,12 @@ Integration with Tibber, now with Pulse support!
 ### Device: Home
 #### Triggers
 - Price changed
-- Consumption report
 - Temperature changed
+- Consumption report (triggers when new data is available, normally once a week)
 
 #### Conditions
 - Current price below/above
+- Outdoor temperature below/above
 
 #### Actions
 - Send push notification (through Tibber app)
@@ -21,9 +22,14 @@ Integration with Tibber, now with Pulse support!
 - Power changed
 - Consumption since midnight changed
 - Cost since midnight changed
+- Daily consumption report
   
 
 ## Release notes
+
+#### 0.2.0
+- Added home flow condition: Outdoor temperature below/above
+- Added pulse flow trigger: Daily consumption report
 
 #### 0.1.0
 - Added Pulse support, with flow trigger cards for power, consumption since midnight and cost since midnight changed  

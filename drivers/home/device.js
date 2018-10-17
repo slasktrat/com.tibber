@@ -40,6 +40,11 @@ class MyDevice extends Homey.Device {
             .register()
             .registerRunListener(args => args.price > _.get(this._lastPrice, 'total'));
 
+        this._outdoorTemperatureBelowCondition = new Homey.FlowCardCondition('temperature_below');
+        this._outdoorTemperatureBelowCondition
+            .register()
+            .registerRunListener(args => args.temperature > this._lastTemperature);
+
         this._sendPushNotificationAction = new Homey.FlowCardAction('sendPushNotification');
         this._sendPushNotificationAction
             .register()
@@ -65,6 +70,7 @@ class MyDevice extends Homey.Device {
             let temperature = Number(_.get(json, 'weatherdata.product.time["0"].location.temperature.value'));
             if(temperature && temperature !== this._lastTemperature)
             {
+                this._lastTemperature = temperature;
                 this.log('Triggering temperature_changed', temperature);
                 this._temperatureChangedTrigger.trigger(this, temperature);
                 this.setCapabilityValue('measure_temperature', temperature).catch(console.error);
@@ -168,10 +174,10 @@ class MyDevice extends Homey.Device {
 
             if (consumptionsSinceLastReport.length > 0)
                 this._consumptionReportTrigger.trigger(this, {
-                    consumption: _.sumBy(consumptionsSinceLastReport, 'consumption'),
-                    totalCost: _.sumBy(consumptionsSinceLastReport, 'totalCost'),
-                    unitCost: _.sumBy(consumptionsSinceLastReport, 'unitCost'),
-                    unitPrice: _.meanBy(consumptionsSinceLastReport, 'unitPrice')
+                    consumption: +_.sumBy(consumptionsSinceLastReport, 'consumption').toFixed(2),
+                    totalCost: +_.sumBy(consumptionsSinceLastReport, 'totalCost').toFixed(2),
+                    unitCost: +_.sumBy(consumptionsSinceLastReport, 'unitCost').toFixed(2),
+                    unitPrice: +_.meanBy(consumptionsSinceLastReport, 'unitPrice').toFixed(2)
                 });
         }
         catch (e) {

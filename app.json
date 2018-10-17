@@ -1,6 +1,6 @@
 {
   "id": "com.tibber",
-  "version": "0.1.3",
+  "version": "0.2.0",
   "compatibility": ">=1.5.0",
   "author": {
     "name": "Espen Ljosland",
@@ -276,21 +276,7 @@
             "name": "totalCost",
             "type": "number",
             "title": {
-              "en": "total cost"
-            }
-          },
-          {
-            "name": "unitCost",
-            "type": "number",
-            "title": {
-              "en": "unit cost"
-            }
-          },
-          {
-            "name": "unitPrice",
-            "type": "number",
-            "title": {
-              "en": "unit price"
+              "en": "cost"
             }
           }
         ],
@@ -367,6 +353,35 @@
             "filter": "driver_id=pulse"
           }
         ]
+      },
+      {
+        "id":"daily_consumption_report",
+        "title": {
+          "en": "Daily consumption report"
+        },
+        "tokens": [
+          {
+            "name": "consumption",
+            "type": "number",
+            "title": {
+              "en": "consumption"
+            }
+          },
+          {
+            "name": "cost",
+            "type": "number",
+            "title": {
+              "en": "cost"
+            }
+          }
+        ],
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=pulse"
+          }
+        ]
       }
     ],
     "conditions": [
@@ -381,6 +396,26 @@
             "type": "number",
             "placeholder": {
               "en": "price"
+            }
+          },
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=home"
+          }
+        ]
+      },
+      {
+        "id": "temperature_below",
+        "title": {
+          "en": "Outdoor temperature !{{below|above}}"
+        },
+        "args": [
+          {
+            "name": "temperature",
+            "type": "number",
+            "placeholder": {
+              "en": "temperature"
             }
           },
           {

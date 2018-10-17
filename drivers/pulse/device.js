@@ -20,6 +20,9 @@ class MyDevice extends Homey.Device {
         this._costChangedTrigger = new Homey.FlowCardTriggerDevice('cost_changed');
         this._costChangedTrigger.register();
 
+        this._dailyConsumptionReportTrigger = new Homey.FlowCardTriggerDevice('daily_consumption_report');
+        this._dailyConsumptionReportTrigger.register();
+
         this.log(`Tibber pulse device ${this.getName()} has been initialized (throttle: ${this._throttle})`);
 
         let prevPower, prevConsumption, prevCost, prevUpdate;
@@ -41,6 +44,12 @@ class MyDevice extends Homey.Device {
             if(consumption && _.isNumber(consumption)) {
                 const fixedConsumtion = +consumption.toFixed(2);
                 if(fixedConsumtion !== prevConsumption) {
+                    if(fixedConsumtion < prevConsumption) //Consumption has been reset
+                    {
+                        this.log('Triggering daily consumption report');
+                        this._dailyConsumptionReportTrigger.trigger(this, {consumption: prevConsumption, cost: prevCost}).catch(console.error)
+                    }
+
                     prevConsumption = fixedConsumtion;
                     this.setCapabilityValue("meter_power", fixedConsumtion).catch(console.error);
                     this._consumptionChangedTrigger.trigger(this, { consumption: fixedConsumtion }).catch(console.error);
