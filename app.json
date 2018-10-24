@@ -1,6 +1,6 @@
 {
   "id": "com.tibber",
-  "version": "0.2.1",
+  "version": "1.0.0",
   "compatibility": ">=1.5.0",
   "author": {
     "name": "Espen Ljosland",
@@ -285,6 +285,60 @@
             "name": "device",
             "type": "device",
             "filter": "driver_id=home"
+          }
+        ]
+      },
+      {
+        "id":"price_below_avg",
+        "title": {
+          "en": "Current price is [x] percent below average of the next [y] hours"
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=home"
+          },
+          {
+            "name": "percentage",
+            "type": "number",
+            "placeholder": {
+              "en": "percentage"
+            }
+          },
+          {
+            "name": "hours",
+            "type": "number",
+            "placeholder": {
+              "en": "hours"
+            }
+          }
+        ]
+      },
+      {
+        "id":"price_above_avg",
+        "title": {
+          "en": "Current price is [x] percent above average of the next [y] hours"
+        },
+        "args": [
+          {
+            "name": "device",
+            "type": "device",
+            "filter": "driver_id=home"
+          },
+          {
+            "name": "percentage",
+            "type": "number",
+            "placeholder": {
+              "en": "percentage"
+            }
+          },
+          {
+            "name": "hours",
+            "type": "number",
+            "placeholder": {
+              "en": "hours"
+            }
           }
         ]
       },

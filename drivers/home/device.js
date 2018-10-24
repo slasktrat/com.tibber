@@ -35,6 +35,16 @@ class MyDevice extends Homey.Device {
         this._consumptionReportTrigger = new Homey.FlowCardTriggerDevice('consumption_report');
         this._consumptionReportTrigger.register();
 
+        this._priceBelowAvgTrigger = new Homey.FlowCardTriggerDevice('price_below_avg');
+        this._priceBelowAvgTrigger
+            .register()
+            .registerRunListener(this._priceAvgComparer.bind(this));
+
+        this._priceAboveAvgTrigger = new Homey.FlowCardTriggerDevice('price_above_avg');
+        this._priceAboveAvgTrigger
+            .register()
+            .registerRunListener(this._priceAvgComparer.bind(this));
+
         this._currentPriceBelowCondition = new Homey.FlowCardCondition('current_price_below');
         this._currentPriceBelowCondition
             .register()
@@ -123,22 +133,44 @@ class MyDevice extends Homey.Device {
     }
 
     async onData(data) {
-        const priceInfo = _.get(data, 'viewer.home.currentSubscription.priceInfo.current');
+        const priceInfoCurrent = _.get(data, 'viewer.home.currentSubscription.priceInfo.current');
         const loggerPrefix = this.getDriver().getDevices().length > 1 ? (`${this._deviceLabel} `) : '';
 
-        if(_.get(priceInfo, 'startsAt') !== _.get(this._lastPrice, 'startsAt')) {
-        	this._lastPrice = priceInfo;
-            this._priceChangedTrigger.trigger(this, priceInfo);
-            this.log('Triggering price_changed', priceInfo);
+        if(_.get(priceInfoCurrent, 'startsAt') !== _.get(this._lastPrice, 'startsAt')) {
+        	this._lastPrice = priceInfoCurrent;
+            this._priceChangedTrigger.trigger(this, priceInfoCurrent);
+            this.log('Triggering price_changed', priceInfoCurrent);
 
-            if(priceInfo.total !== null) {
-                this.setCapabilityValue("price_total", priceInfo.total).catch(console.error);
+            if(priceInfoCurrent.total !== null) {
+                this.setCapabilityValue("price_total", priceInfoCurrent.total).catch(console.error);
                 let priceLogger = await this._createGetLog(`${this._insightId}_price`, {
                     label: `${loggerPrefix}Current price`,
                     type: 'number',
                     decimals: true
                 });
-                priceLogger.createEntry(priceInfo.total, moment(priceInfo.startsAt).toDate()).catch();
+                priceLogger.createEntry(priceInfoCurrent.total, moment(priceInfoCurrent.startsAt).toDate()).catch(console.error);
+
+                const priceInfoToday = _.get(data, 'viewer.home.currentSubscription.priceInfo.today');
+                const priceInfoTomorrow = _.get(data, 'viewer.home.currentSubscription.priceInfo.tomorrow');
+                let priceInfoNextHours;
+                if(priceInfoToday && priceInfoTomorrow)
+                    priceInfoNextHours = priceInfoToday.concat(priceInfoTomorrow);
+                else if (priceInfoToday)
+                    priceInfoNextHours = priceInfoToday;
+
+                if(priceInfoNextHours) {
+                    this._priceBelowAvgTrigger.trigger(this, null, {
+                        below: true,
+                        priceInfoCurrent: priceInfoCurrent,
+                        priceInfoNextHours: priceInfoNextHours
+                    }).catch(console.error);
+
+                    this._priceAboveAvgTrigger.trigger(this, null, {
+                        below: false,
+                        priceInfoCurrent: priceInfoCurrent,
+                        priceInfoNextHours: priceInfoNextHours
+                    }).catch(console.error);
+                }
             }
 		}
 
@@ -215,6 +247,24 @@ class MyDevice extends Homey.Device {
         catch (e) {
             console.error('Error logging hourly consumption', e);
         }
+    }
+
+    _priceAvgComparer(args, state) {
+        if (!args.hours)
+            return false;
+
+        const now = moment();
+        let avgPriceNextHours = _(state.priceInfoNextHours)
+                                    .filter(p => args.hours > 0 ? moment(p.startsAt).isAfter(now) : moment(p.startsAt).isBefore(now))
+                                    .take(Math.abs(args.hours))
+                                    .meanBy(x => x.total);
+
+        let diffAvgCurrent = (state.priceInfoCurrent.total - avgPriceNextHours) / avgPriceNextHours * 100;
+        if (state.below)
+            diffAvgCurrent = diffAvgCurrent * -1;
+
+        this.log(`${state.priceInfoCurrent.total.toFixed(2)} is ${diffAvgCurrent.toFixed(2)}% ${args.below ? 'below' : 'above'} avg (${avgPriceNextHours.toFixed(2)}) next ${args.hours} hours. Condition of min ${args.percentage} percentage met = ${diffAvgCurrent > args.percentage}`);
+        return diffAvgCurrent > args.percentage;
     }
 
     async _createGetLog(name, options) {

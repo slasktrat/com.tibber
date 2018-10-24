@@ -65,6 +65,18 @@ function getConsumptionQuery(homeId) {
                     tax
                     startsAt
                   }
+                  today {
+                    total
+                    energy
+                    tax
+                    startsAt
+                  }
+                  tomorrow {
+                    total
+                    energy
+                    tax
+                    startsAt
+                  }
                 }
               }
               daily: consumption(resolution: DAILY, last: 14) {
