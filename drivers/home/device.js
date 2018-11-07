@@ -45,6 +45,16 @@ class MyDevice extends Homey.Device {
             .register()
             .registerRunListener(this._priceAvgComparer.bind(this));
 
+        this._priceAtLowestTrigger = new Homey.FlowCardTriggerDevice('price_at_lowest');
+        this._priceAtLowestTrigger
+            .register()
+            .registerRunListener(this._priceMinMaxComparer.bind(this));
+
+        this._priceAtHighestTrigger = new Homey.FlowCardTriggerDevice('price_at_highest');
+        this._priceAtHighestTrigger
+            .register()
+            .registerRunListener(this._priceMinMaxComparer.bind(this));
+
         this._currentPriceBelowCondition = new Homey.FlowCardCondition('current_price_below');
         this._currentPriceBelowCondition
             .register()
@@ -170,6 +180,18 @@ class MyDevice extends Homey.Device {
                         priceInfoCurrent: priceInfoCurrent,
                         priceInfoNextHours: priceInfoNextHours
                     }).catch(console.error);
+
+                    this._priceAtLowestTrigger.trigger(this, null, {
+                        lowest: true,
+                        priceInfoCurrent: priceInfoCurrent,
+                        priceInfoNextHours: priceInfoNextHours
+                    }).catch(console.error);
+
+                    this._priceAtHighestTrigger.trigger(this, null, {
+                        lowest: false,
+                        priceInfoCurrent: priceInfoCurrent,
+                        priceInfoNextHours: priceInfoNextHours
+                    }).catch(console.error);
                 }
             }
 		}
@@ -265,6 +287,26 @@ class MyDevice extends Homey.Device {
 
         this.log(`${state.priceInfoCurrent.total.toFixed(2)} is ${diffAvgCurrent.toFixed(2)}% ${args.below ? 'below' : 'above'} avg (${avgPriceNextHours.toFixed(2)}) next ${args.hours} hours. Condition of min ${args.percentage} percentage met = ${diffAvgCurrent > args.percentage}`);
         return diffAvgCurrent > args.percentage;
+    }
+
+    _priceMinMaxComparer(args, state) {
+        if (!args.hours)
+            return false;
+
+        const now = moment();
+        let pricesNextHours = _(state.priceInfoNextHours)
+            .filter(p => args.hours > 0 ? moment(p.startsAt).isAfter(now) : moment(p.startsAt).isBefore(now))
+            .take(Math.abs(args.hours))
+            .value();
+
+        const toCompare = state.lowest ? _.minBy(pricesNextHours, 'total').total
+            : _.maxBy(pricesNextHours, 'total').total;
+
+        const conditionMet = state.lowest ? state.priceInfoCurrent.total <= toCompare
+            : state.priceInfoCurrent.total >= toCompare;
+
+        this.log(`${state.priceInfoCurrent.total.toFixed(2)} is ${state.lowest ? 'lowest than the lowest' : 'higher than the highest'} (${toCompare}) among the next ${args.hours} hours = ${conditionMet}`);
+        return conditionMet;
     }
 
     async _createGetLog(name, options) {
