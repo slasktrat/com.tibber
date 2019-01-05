@@ -62,9 +62,6 @@ class MyDriver extends Homey.Driver {
         tibber.getHomes()
             .then(data => {
                 let devices = _.reject(_.map(_.get(data, 'viewer.homes'), home => {
-                    let isActive = _.get(home, 'currentSubscription.status') === 'running';
-                    if(!isActive)
-                        return null;
                     let hasPulse = !!_.get(home, 'features.realTimeConsumptionEnabled');
                     if(!hasPulse)
                         return null;
