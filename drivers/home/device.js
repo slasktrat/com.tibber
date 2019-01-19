@@ -91,9 +91,11 @@ class MyDevice extends Homey.Device {
             if(temperature && temperature !== this._lastTemperature)
             {
                 this._lastTemperature = temperature;
+                this.setCapabilityValue('measure_temperature', temperature).catch(console.error);
+
                 this.log('Triggering temperature_changed', temperature);
                 this._temperatureChangedTrigger.trigger(this, temperature);
-                this.setCapabilityValue('measure_temperature', temperature).catch(console.error);
+
                 const loggerPrefix = this.getDriver().getDevices().length > 1 ? (`${this._deviceLabel} `) : '';
                 let temperatureLogger = await this._createGetLog(`${this._insightId}_temperature`, {
                     label: `${loggerPrefix}Outdoor temperature`,
@@ -148,11 +150,13 @@ class MyDevice extends Homey.Device {
 
         if(_.get(priceInfoCurrent, 'startsAt') !== _.get(this._lastPrice, 'startsAt')) {
         	this._lastPrice = priceInfoCurrent;
-            this._priceChangedTrigger.trigger(this, priceInfoCurrent);
-            this.log('Triggering price_changed', priceInfoCurrent);
 
             if(priceInfoCurrent.total !== null) {
                 this.setCapabilityValue("price_total", priceInfoCurrent.total).catch(console.error);
+
+                this._priceChangedTrigger.trigger(this, priceInfoCurrent);
+                this.log('Triggering price_changed', priceInfoCurrent);
+
                 let priceLogger = await this._createGetLog(`${this._insightId}_price`, {
                     label: `${loggerPrefix}Current price`,
                     type: 'number',
