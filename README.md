@@ -33,6 +33,9 @@ Integration with Tibber, with Pulse support!
 &nbsp;
 ### Release Notes
 
+#### 1.0.4
+- Fixed flow triggers broken in 2.0 
+&nbsp;
 #### 1.0.3
 - Registering capability value before triggering flow action (fixed issue #5) 
 &nbsp;
