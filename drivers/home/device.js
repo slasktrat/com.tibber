@@ -20,7 +20,7 @@ class MyDevice extends Homey.Device {
 
         this._deviceId = this.getData().id;
         this._deviceLabel = this.getName();
-        this._insightId = this._deviceLabel.replace(/[^a-z0-9]/ig,'_');
+        this._insightId = this._deviceLabel.replace(/[^a-z0-9]/ig,'_').toLowerCase();
         this._lastPrice = undefined;
         this._lastTemperature = undefined;
         this._lastFetchedStartAt = undefined;
@@ -102,7 +102,7 @@ class MyDevice extends Homey.Device {
                     type: 'number',
                     decimals: true
                 });
-                temperatureLogger.createEntry(temperature, moment(json.weatherdata.product.time["0"].from).toDate()).catch();
+                temperatureLogger.createEntry(temperature, moment(json.weatherdata.product.time["0"].from).toDate()).catch(console.error);
             }
         }
         catch (e) {
@@ -219,14 +219,14 @@ class MyDevice extends Homey.Device {
                         decimals: true
                     });
 
-                    consumptionLogger.createEntry(dailyConsumption.consumption, moment(dailyConsumption.to).toDate()).catch();
+                    consumptionLogger.createEntry(dailyConsumption.consumption, moment(dailyConsumption.to).toDate()).catch(console.error);
 
                     let costLogger = await this._createGetLog(`${this._insightId}_dailyCost`, {
                         label: `${loggerPrefix}Daily total cost`,
                         type: 'number',
                         decimals: true
                     });
-                    costLogger.createEntry(dailyConsumption.totalCost, moment(dailyConsumption.to).toDate()).catch();
+                    costLogger.createEntry(dailyConsumption.totalCost, moment(dailyConsumption.to).toDate()).catch(console.error);
                 }
             });
 
@@ -259,14 +259,14 @@ class MyDevice extends Homey.Device {
                         decimals: true
                     });
 
-                    consumptionLogger.createEntry(hourlyConsumption.consumption, moment(hourlyConsumption.to).toDate()).catch();
+                    consumptionLogger.createEntry(hourlyConsumption.consumption, moment(hourlyConsumption.to).toDate()).catch(console.error);
 
                     let costLogger = await this._createGetLog(`${this._insightId}_hourlyCost`, {
                         label: `${loggerPrefix}Hourly total cost`,
                         type: 'number',
                         decimals: true
                     });
-                    costLogger.createEntry(hourlyConsumption.totalCost, moment(hourlyConsumption.to).toDate()).catch();
+                    costLogger.createEntry(hourlyConsumption.totalCost, moment(hourlyConsumption.to).toDate()).catch(console.error);
                 }
             });
         }
@@ -309,7 +309,7 @@ class MyDevice extends Homey.Device {
         const conditionMet = state.lowest ? state.priceInfoCurrent.total <= toCompare
             : state.priceInfoCurrent.total >= toCompare;
 
-        this.log(`${state.priceInfoCurrent.total.toFixed(2)} is ${state.lowest ? 'lowest than the lowest' : 'higher than the highest'} (${toCompare}) among the next ${args.hours} hours = ${conditionMet}`);
+        this.log(`${state.priceInfoCurrent.total.toFixed(2)} is ${state.lowest ? 'lower than the lowest' : 'higher than the highest'} (${toCompare}) among the next ${args.hours} hours = ${conditionMet}`);
         return conditionMet;
     }
 
@@ -319,7 +319,11 @@ class MyDevice extends Homey.Device {
 	        return log;
         }
         catch(e) {
-	        return Homey.ManagerInsights.createLog(name, options);
+            console.error('Could not find log ' + name + '. Creating new log.', e);
+	        if(!options.title)
+	            options.title = options.label; //for 2.0 support
+
+             return Homey.ManagerInsights.createLog(name, options);
         }
     }
 }

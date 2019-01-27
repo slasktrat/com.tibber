@@ -1,6 +1,6 @@
 {
   "id": "com.tibber",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "compatibility": ">=1.5.0",
   "author": {
     "name": "Espen Ljosland",
@@ -31,7 +31,8 @@
       "setable": false,
       "units": {
         "en": "kr"
-      }
+      },
+      "icon": "/drivers/home/assets/dollar.svg"
     },
     "accumulatedCost": {
       "type": "number",
