@@ -18,6 +18,10 @@ Integration with Tibber, with Pulse support!
 #### Conditions
 - Current price below/above
 - Outdoor temperature below/above
+- Current price is at the lowest among the next [x] hours
+- Current price is at the highest among the next [x] hours
+- Current price is [x] percent below average of the next [y] hours
+- Current price is [x] percent above average of the next [y] hours
 &nbsp;
 #### Actions
 - Send push notification (through Tibber app)
@@ -33,6 +37,11 @@ Integration with Tibber, with Pulse support!
 &nbsp;
 ### Release Notes
 
+#### 1.0.5
+- Added condition cards for lowest/highest price among the next [x] hours
+- Added cost calculation to Pulse for users without a (paying) subscription, based on nordpool prices. Note: Net spot prices/without any taxes, fees, etc.
+- Minor fixes
+&nbsp;
 #### 1.0.4
 - Fixed flow triggers broken in 2.0 
 &nbsp;

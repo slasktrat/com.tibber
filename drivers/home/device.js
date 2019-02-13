@@ -2,14 +2,10 @@
 
 const   Homey               = require('homey'),
         _                   = require('lodash'),
-        moment				= require('moment'),
+        http                = require('http.min'),
+        moment				= require('moment-timezone'),
         Promise             = require('bluebird'),
-        tibber              = require('../../tibber');
-
-const yrno = require('yr.no-forecast')({
-    version: '1.9',
-    request: { timeout: 15000 }
-});
+        tibber              = require('../../lib/tibber');
 
 class MyDevice extends Homey.Device {
 	
@@ -105,9 +101,9 @@ class MyDevice extends Homey.Device {
 
 	async getTemperature() {
 	    try {
-	        const weather = await yrno.getWeather(this._location);
-            let json = weather.getJson();
-            let temperature = Number(_.get(json, 'weatherdata.product.time["0"].location.temperature.value'));
+	        const forecast = await http.json(`https://api.darksky.net/forecast/${Homey.env.DS_API_KEY}/${this._location.lat},${this._location.lon}?units=si`);
+	        const temperature = _.get(forecast, 'currently.temperature');
+
             if(temperature && temperature !== this._lastTemperature)
             {
                 this._lastTemperature = temperature;
@@ -122,7 +118,7 @@ class MyDevice extends Homey.Device {
                     type: 'number',
                     decimals: true
                 });
-                temperatureLogger.createEntry(temperature, moment(json.weatherdata.product.time["0"].from).toDate()).catch(console.error);
+                temperatureLogger.createEntry(temperature, new Date()).catch(console.error);
             }
         }
         catch (e) {

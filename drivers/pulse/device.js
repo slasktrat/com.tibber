@@ -2,8 +2,9 @@
 
 const   Homey               = require('homey'),
         _                   = require('lodash'),
-        moment              = require('moment'),
-        tibber              = require('../../tibber');
+        moment              = require('moment-timezone'),
+        http                = require('http.min'),
+        tibber              = require('../../lib/tibber');
 
 class MyDevice extends Homey.Device {
 	
@@ -26,7 +27,7 @@ class MyDevice extends Homey.Device {
         this.log(`Tibber pulse device ${this.getName()} has been initialized (throttle: ${this._throttle})`);
 
         let prevPower, prevConsumption, prevCost, prevUpdate;
-        tibber.subscribeToLive(this.getData().t, this._deviceId, result => {
+        tibber.subscribeToLive(this.getData().t, this._deviceId, async result => {
             if(prevUpdate && moment().diff(prevUpdate, 'seconds') < this._throttle)
                 return;
 
@@ -56,7 +57,34 @@ class MyDevice extends Homey.Device {
                 }
             }
 
-            const cost = _.get(result, 'data.liveMeasurement.accumulatedCost');
+            let cost = _.get(result, 'data.liveMeasurement.accumulatedCost');
+            if(!cost) {
+                try {
+                    const now = moment();
+                    if(!this._cachedNordpoolPrice || this._cachedNordpoolPrice.hour !== now.hour()) {
+                        const area = this._area || 'Oslo';
+                        const currency = this._currency || 'NOK';
+                        this.log(`Using nordpool prices. Currency: ${currency} - Area: ${area}`);
+                        const result = await http.json(`https://www.nordpoolgroup.com/api/marketdata/page/10?currency=${currency},${currency},${currency},${currency}&endDate=${moment().format("DD-MM-YYYY")}`);
+                        const areaCurrentPrice = _(_.get(result, 'data.Rows'))
+                                                .filter(row => !row.IsExtraRow && moment.tz(row.StartTime, 'Europe/Oslo').isBefore(now) && moment.tz(row.EndTime, 'Europe/Oslo').isAfter(now))
+                                                .map(row => row.Columns)
+                                                .first()
+                                                .find(a => a.Name === area);
+
+                        if(areaCurrentPrice) {
+                            let currentPrice = Number(areaCurrentPrice.Value.replace(',', '.').trim()) / 1000;
+                            this._cachedNordpoolPrice = { hour: now.hour(), price: currentPrice };
+                        }
+                    }
+                    if(_.isNumber(this._cachedNordpoolPrice.price))
+                        cost = this._cachedNordpoolPrice.price * consumption;
+                }
+                catch (e) {
+                    console.error('Error fetching prices from nordpool', e);
+                }
+            }
+
             if(cost && _.isNumber(cost)) {
                 const fixedCost = +cost.toFixed(2);
                 if(fixedCost !== prevCost) {
@@ -72,6 +100,16 @@ class MyDevice extends Homey.Device {
         if (changedKeysArr.includes('pulse_throttle')) {
             this.log('Updated throttle value: ', newSettingsObj.pulse_throttle);
             this._throttle = newSettingsObj.pulse_throttle;
+        }
+        if (changedKeysArr.includes('pulse_currency')) {
+            this.log('Updated currency value: ', newSettingsObj.pulse_currency);
+            this._currency = newSettingsObj.pulse_currency;
+            this._cachedNordpoolPrice = null;
+        }
+        if (changedKeysArr.includes('pulse_area')) {
+            this.log('Updated area value: ', newSettingsObj.pulse_area);
+            this._area = newSettingsObj.pulse_area;
+            this._cachedNordpoolPrice = null;
         }
         callback(null, true);
     }
