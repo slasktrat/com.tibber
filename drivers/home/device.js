@@ -60,6 +60,26 @@ class MyDevice extends Homey.Device {
             .register()
             .registerRunListener(args => args.price > _.get(this._lastPrice, 'total'));
 
+        this._currentPriceBelowAvgCondition = new Homey.FlowCardCondition('cond_price_below_avg');
+        this._currentPriceBelowAvgCondition
+            .register()
+            .registerRunListener(args => this._priceAvgComparer(args, { below: true }));
+
+        this._currentPriceAboveAvgCondition = new Homey.FlowCardCondition('cond_price_above_avg');
+        this._currentPriceAboveAvgCondition
+            .register()
+            .registerRunListener(args => this._priceAvgComparer(args, { below: false }));
+
+        this._currentPriceAtLowestCondition = new Homey.FlowCardCondition('cond_price_at_lowest');
+        this._currentPriceAtLowestCondition
+            .register()
+            .registerRunListener(args => this._priceMinMaxComparer(args, { lowest: true }));
+
+        this._currentPriceAtHighestCondition = new Homey.FlowCardCondition('cond_price_at_highest');
+        this._currentPriceAtHighestCondition
+            .register()
+            .registerRunListener(args => this._priceMinMaxComparer(args, { lowest: false }));
+
         this._outdoorTemperatureBelowCondition = new Homey.FlowCardCondition('temperature_below');
         this._outdoorTemperatureBelowCondition
             .register()
@@ -151,6 +171,16 @@ class MyDevice extends Homey.Device {
         if(_.get(priceInfoCurrent, 'startsAt') !== _.get(this._lastPrice, 'startsAt')) {
         	this._lastPrice = priceInfoCurrent;
 
+            const priceInfoToday = _.get(data, 'viewer.home.currentSubscription.priceInfo.today');
+            const priceInfoTomorrow = _.get(data, 'viewer.home.currentSubscription.priceInfo.tomorrow');
+            let priceInfoNextHours;
+            if(priceInfoToday && priceInfoTomorrow)
+                priceInfoNextHours = priceInfoToday.concat(priceInfoTomorrow);
+            else if (priceInfoToday)
+                priceInfoNextHours = priceInfoToday;
+
+            this._priceInfoNextHours = priceInfoNextHours;
+
             if(priceInfoCurrent.total !== null) {
                 this.setCapabilityValue("price_total", priceInfoCurrent.total).catch(console.error);
 
@@ -164,38 +194,11 @@ class MyDevice extends Homey.Device {
                 });
                 priceLogger.createEntry(priceInfoCurrent.total, moment(priceInfoCurrent.startsAt).toDate()).catch(console.error);
 
-                const priceInfoToday = _.get(data, 'viewer.home.currentSubscription.priceInfo.today');
-                const priceInfoTomorrow = _.get(data, 'viewer.home.currentSubscription.priceInfo.tomorrow');
-                let priceInfoNextHours;
-                if(priceInfoToday && priceInfoTomorrow)
-                    priceInfoNextHours = priceInfoToday.concat(priceInfoTomorrow);
-                else if (priceInfoToday)
-                    priceInfoNextHours = priceInfoToday;
-
                 if(priceInfoNextHours) {
-                    this._priceBelowAvgTrigger.trigger(this, null, {
-                        below: true,
-                        priceInfoCurrent: priceInfoCurrent,
-                        priceInfoNextHours: priceInfoNextHours
-                    }).catch(console.error);
-
-                    this._priceAboveAvgTrigger.trigger(this, null, {
-                        below: false,
-                        priceInfoCurrent: priceInfoCurrent,
-                        priceInfoNextHours: priceInfoNextHours
-                    }).catch(console.error);
-
-                    this._priceAtLowestTrigger.trigger(this, null, {
-                        lowest: true,
-                        priceInfoCurrent: priceInfoCurrent,
-                        priceInfoNextHours: priceInfoNextHours
-                    }).catch(console.error);
-
-                    this._priceAtHighestTrigger.trigger(this, null, {
-                        lowest: false,
-                        priceInfoCurrent: priceInfoCurrent,
-                        priceInfoNextHours: priceInfoNextHours
-                    }).catch(console.error);
+                    this._priceBelowAvgTrigger.trigger(this, null, { below: true }).catch(console.error);
+                    this._priceAboveAvgTrigger.trigger(this, null, { below: false }).catch(console.error);
+                    this._priceAtLowestTrigger.trigger(this, null, { lowest: true }).catch(console.error);
+                    this._priceAtHighestTrigger.trigger(this, null, { lowest: false }).catch(console.error);
                 }
             }
 		}
@@ -280,16 +283,16 @@ class MyDevice extends Homey.Device {
             return false;
 
         const now = moment();
-        let avgPriceNextHours = _(state.priceInfoNextHours)
+        let avgPriceNextHours = _(this._priceInfoNextHours)
                                     .filter(p => args.hours > 0 ? moment(p.startsAt).isAfter(now) : moment(p.startsAt).isBefore(now))
                                     .take(Math.abs(args.hours))
                                     .meanBy(x => x.total);
 
-        let diffAvgCurrent = (state.priceInfoCurrent.total - avgPriceNextHours) / avgPriceNextHours * 100;
+        let diffAvgCurrent = (this._lastPrice.total - avgPriceNextHours) / avgPriceNextHours * 100;
         if (state.below)
             diffAvgCurrent = diffAvgCurrent * -1;
 
-        this.log(`${state.priceInfoCurrent.total.toFixed(2)} is ${diffAvgCurrent.toFixed(2)}% ${args.below ? 'below' : 'above'} avg (${avgPriceNextHours.toFixed(2)}) next ${args.hours} hours. Condition of min ${args.percentage} percentage met = ${diffAvgCurrent > args.percentage}`);
+        this.log(`${this._lastPrice.total.toFixed(2)} is ${diffAvgCurrent.toFixed(2)}% ${state.below ? 'below' : 'above'} avg (${avgPriceNextHours.toFixed(2)}) next ${args.hours} hours. Condition of min ${args.percentage} percentage met = ${diffAvgCurrent > args.percentage}`);
         return diffAvgCurrent > args.percentage;
     }
 
@@ -298,7 +301,7 @@ class MyDevice extends Homey.Device {
             return false;
 
         const now = moment();
-        let pricesNextHours = _(state.priceInfoNextHours)
+        let pricesNextHours = _(this._priceInfoNextHours)
             .filter(p => args.hours > 0 ? moment(p.startsAt).isAfter(now) : moment(p.startsAt).isBefore(now))
             .take(Math.abs(args.hours))
             .value();
@@ -306,10 +309,10 @@ class MyDevice extends Homey.Device {
         const toCompare = state.lowest ? _.minBy(pricesNextHours, 'total').total
             : _.maxBy(pricesNextHours, 'total').total;
 
-        const conditionMet = state.lowest ? state.priceInfoCurrent.total <= toCompare
-            : state.priceInfoCurrent.total >= toCompare;
+        const conditionMet = state.lowest ? this._lastPrice.total <= toCompare
+            : this._lastPrice.total >= toCompare;
 
-        this.log(`${state.priceInfoCurrent.total.toFixed(2)} is ${state.lowest ? 'lower than the lowest' : 'higher than the highest'} (${toCompare}) among the next ${args.hours} hours = ${conditionMet}`);
+        this.log(`${this._lastPrice.total.toFixed(2)} is ${state.lowest ? 'lower than the lowest' : 'higher than the highest'} (${toCompare}) among the next ${args.hours} hours = ${conditionMet}`);
         return conditionMet;
     }
 
