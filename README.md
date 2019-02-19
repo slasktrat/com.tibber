@@ -37,7 +37,7 @@ Integration with Tibber, with Pulse support!
 &nbsp;
 ### Release Notes
 
-#### 1.0.5
+#### 1.0.6
 - Added condition cards for lowest/highest price among the next [x] hours
 - Added cost calculation to Pulse for users without a (paying) subscription, based on nordpool prices. Note: Net spot prices/without any taxes, fees, etc.
 - Minor fixes
