@@ -9,8 +9,12 @@ Integration with Tibber, with Pulse support!
 #### Triggers
 - Price changed
 - Temperature changed
+- Current price is at today's lowest
+- Current price is at today's highest
 - Current price is at the lowest among the next [x] hours
 - Current price is at the highest among the next [x] hours
+- Current price is [x] percent below today's average
+- Current price is [x] percent above today's average
 - Current price is [x] percent below average of the next [y] hours
 - Current price is [x] percent above average of the next [y] hours
 - Consumption report (triggers when new data is available, normally once a week. Every hour if you have a Pulse device)
@@ -18,8 +22,12 @@ Integration with Tibber, with Pulse support!
 #### Conditions
 - Current price below/above
 - Outdoor temperature below/above
+- Current price is at today's lowest
+- Current price is at today's highest
 - Current price is at the lowest among the next [x] hours
 - Current price is at the highest among the next [x] hours
+- Current price is [x] percent below today's average
+- Current price is [x] percent above today's average
 - Current price is [x] percent below average of the next [y] hours
 - Current price is [x] percent above average of the next [y] hours
 &nbsp;
@@ -37,6 +45,10 @@ Integration with Tibber, with Pulse support!
 &nbsp;
 ### Release Notes
 
+#### 1.0.7
+- Added 4 new trigger and 4 new condition cards for price at today's lowest/highest and above/below a set average
+- Added fallback code for re-initiating Pulse subscription if no data for 10 minutes
+&nbsp;
 #### 1.0.6
 - Added condition cards for lowest/highest price among the next [x] hours
 - Added cost calculation to Pulse for users without a (paying) subscription, based on nordpool prices. Note: Net spot prices/without any taxes, fees, etc.
