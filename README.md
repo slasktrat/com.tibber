@@ -45,7 +45,7 @@ Integration with Tibber, with Pulse support!
 &nbsp;
 ### Release Notes
 
-#### 1.0.7
+#### 1.0.8
 - Added 4 new trigger and 4 new condition cards for price at today's lowest/highest and above/below a set average
 - Added fallback code for re-initiating Pulse subscription if no data for 10 minutes
 &nbsp;

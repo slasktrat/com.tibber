@@ -158,7 +158,7 @@ class MyDevice extends Homey.Device {
             }
         }
         catch (e) {
-            console.error('Error fetching weather forecast', e);
+            console.error(`Error fetching weather forecast (${this._location.lat},${this._location.lon})`, e);
         }
     }
 
@@ -234,9 +234,9 @@ class MyDevice extends Homey.Device {
                     this._priceAtLowestTrigger.trigger(this, null, { lowest: true }).catch(console.error);
                     this._priceAtHighestTrigger.trigger(this, null, { lowest: false }).catch(console.error);
 
-                    if(this._priceAvgComparer({}, { lowest: true }))
+                    if(this._priceMinMaxComparer({}, { lowest: true }))
                         this._priceAtLowestTodayTrigger.trigger(this, null, { lowest: true }).catch(console.error);
-                    if(this._priceAvgComparer({}, { lowest: false }))
+                    if(this._priceMinMaxComparer({}, { lowest: false }))
                         this._priceAtHighestTodayTrigger.trigger(this, null, { lowest: false }).catch(console.error);
                 }
             }
