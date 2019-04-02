@@ -45,6 +45,9 @@ Integration with Tibber, with Pulse support!
 &nbsp;
 ### Release Notes
 
+#### 1.0.10
+- Fixed weather forecast (#13)
+&nbsp;  
 #### 1.0.9
 - Fixed #12  
 &nbsp;
