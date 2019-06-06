@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -7,7 +7,7 @@
  * @flow strict
  */
 
-import type { ObjMap } from './ObjMap';
+import { type ObjMap } from './ObjMap';
 
 /**
  * Creates a keyed JS object from an array, given a function to produce the keys
@@ -36,8 +36,8 @@ export default function keyMap<T>(
   list: $ReadOnlyArray<T>,
   keyFn: (item: T) => string,
 ): ObjMap<T> {
-  return list.reduce(
-    (map, item) => ((map[keyFn(item)] = item), map),
-    Object.create(null),
-  );
+  return list.reduce((map, item) => {
+    map[keyFn(item)] = item;
+    return map;
+  }, Object.create(null));
 }

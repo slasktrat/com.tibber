@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -7,28 +7,27 @@
  * @flow strict
  */
 
-import type { ObjMap } from '../jsutils/ObjMap';
-import type { GraphQLError } from '../error';
-import { visit, visitWithTypeInfo } from '../language/visitor';
+import { type ObjMap } from '../jsutils/ObjMap';
+import { type GraphQLError } from '../error';
+import { type ASTVisitor, visit, visitWithTypeInfo } from '../language/visitor';
 import { Kind } from '../language/kinds';
-import type {
-  DocumentNode,
-  OperationDefinitionNode,
-  VariableNode,
-  SelectionSetNode,
-  FragmentSpreadNode,
-  FragmentDefinitionNode,
+import {
+  type DocumentNode,
+  type OperationDefinitionNode,
+  type VariableNode,
+  type SelectionSetNode,
+  type FragmentSpreadNode,
+  type FragmentDefinitionNode,
 } from '../language/ast';
-import type { ASTVisitor } from '../language/visitor';
-import type { GraphQLSchema } from '../type/schema';
-import type {
-  GraphQLInputType,
-  GraphQLOutputType,
-  GraphQLCompositeType,
-  GraphQLField,
-  GraphQLArgument,
+import { type GraphQLSchema } from '../type/schema';
+import {
+  type GraphQLInputType,
+  type GraphQLOutputType,
+  type GraphQLCompositeType,
+  type GraphQLField,
+  type GraphQLArgument,
 } from '../type/definition';
-import type { GraphQLDirective } from '../type/directives';
+import { type GraphQLDirective } from '../type/directives';
 import { TypeInfo } from '../utilities/TypeInfo';
 
 type NodeWithSelectionSet = OperationDefinitionNode | FragmentDefinitionNode;
@@ -46,10 +45,19 @@ type VariableUsage = {|
 export class ASTValidationContext {
   _ast: DocumentNode;
   _errors: Array<GraphQLError>;
+  _fragments: ?ObjMap<FragmentDefinitionNode>;
+  _fragmentSpreads: Map<SelectionSetNode, $ReadOnlyArray<FragmentSpreadNode>>;
+  _recursivelyReferencedFragments: Map<
+    OperationDefinitionNode,
+    $ReadOnlyArray<FragmentDefinitionNode>,
+  >;
 
   constructor(ast: DocumentNode): void {
     this._ast = ast;
     this._errors = [];
+    this._fragments = undefined;
+    this._fragmentSpreads = new Map();
+    this._recursivelyReferencedFragments = new Map();
   }
 
   reportError(error: GraphQLError): void {
@@ -62,55 +70,6 @@ export class ASTValidationContext {
 
   getDocument(): DocumentNode {
     return this._ast;
-  }
-}
-
-export class SDLValidationContext extends ASTValidationContext {
-  _schema: ?GraphQLSchema;
-
-  constructor(ast: DocumentNode, schema?: ?GraphQLSchema): void {
-    super(ast);
-    this._schema = schema;
-  }
-
-  getSchema(): ?GraphQLSchema {
-    return this._schema;
-  }
-}
-
-export type SDLValidationRule = SDLValidationContext => ASTVisitor;
-
-export class ValidationContext extends ASTValidationContext {
-  _schema: GraphQLSchema;
-  _typeInfo: TypeInfo;
-  _fragments: ObjMap<FragmentDefinitionNode>;
-  _fragmentSpreads: Map<SelectionSetNode, $ReadOnlyArray<FragmentSpreadNode>>;
-  _recursivelyReferencedFragments: Map<
-    OperationDefinitionNode,
-    $ReadOnlyArray<FragmentDefinitionNode>,
-  >;
-  _variableUsages: Map<NodeWithSelectionSet, $ReadOnlyArray<VariableUsage>>;
-  _recursiveVariableUsages: Map<
-    OperationDefinitionNode,
-    $ReadOnlyArray<VariableUsage>,
-  >;
-
-  constructor(
-    schema: GraphQLSchema,
-    ast: DocumentNode,
-    typeInfo: TypeInfo,
-  ): void {
-    super(ast);
-    this._schema = schema;
-    this._typeInfo = typeInfo;
-    this._fragmentSpreads = new Map();
-    this._recursivelyReferencedFragments = new Map();
-    this._variableUsages = new Map();
-    this._recursiveVariableUsages = new Map();
-  }
-
-  getSchema(): GraphQLSchema {
-    return this._schema;
   }
 
   getFragment(name: string): ?FragmentDefinitionNode {
@@ -178,6 +137,49 @@ export class ValidationContext extends ASTValidationContext {
       this._recursivelyReferencedFragments.set(operation, fragments);
     }
     return fragments;
+  }
+}
+
+export type ASTValidationRule = ASTValidationContext => ASTVisitor;
+
+export class SDLValidationContext extends ASTValidationContext {
+  _schema: ?GraphQLSchema;
+
+  constructor(ast: DocumentNode, schema?: ?GraphQLSchema): void {
+    super(ast);
+    this._schema = schema;
+  }
+
+  getSchema(): ?GraphQLSchema {
+    return this._schema;
+  }
+}
+
+export type SDLValidationRule = SDLValidationContext => ASTVisitor;
+
+export class ValidationContext extends ASTValidationContext {
+  _schema: GraphQLSchema;
+  _typeInfo: TypeInfo;
+  _variableUsages: Map<NodeWithSelectionSet, $ReadOnlyArray<VariableUsage>>;
+  _recursiveVariableUsages: Map<
+    OperationDefinitionNode,
+    $ReadOnlyArray<VariableUsage>,
+  >;
+
+  constructor(
+    schema: GraphQLSchema,
+    ast: DocumentNode,
+    typeInfo: TypeInfo,
+  ): void {
+    super(ast);
+    this._schema = schema;
+    this._typeInfo = typeInfo;
+    this._variableUsages = new Map();
+    this._recursiveVariableUsages = new Map();
+  }
+
+  getSchema(): GraphQLSchema {
+    return this._schema;
   }
 
   getVariableUsages(node: NodeWithSelectionSet): $ReadOnlyArray<VariableUsage> {

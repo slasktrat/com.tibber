@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -7,9 +7,9 @@
  * @flow strict
  */
 
-import type { ValidationContext } from '../ValidationContext';
+import { type ValidationContext } from '../ValidationContext';
 import { GraphQLError } from '../../error/GraphQLError';
-import type { ASTVisitor } from '../../language/visitor';
+import { type ASTVisitor } from '../../language/visitor';
 
 export function unknownFragmentMessage(fragName: string): string {
   return `Unknown fragment "${fragName}".`;
@@ -28,7 +28,7 @@ export function KnownFragmentNames(context: ValidationContext): ASTVisitor {
       const fragment = context.getFragment(fragmentName);
       if (!fragment) {
         context.reportError(
-          new GraphQLError(unknownFragmentMessage(fragmentName), [node.name]),
+          new GraphQLError(unknownFragmentMessage(fragmentName), node.name),
         );
       }
     },

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -7,7 +7,13 @@
  * @flow strict
  */
 
+import find from '../polyfills/find';
+import objectValues from '../polyfills/objectValues';
 import {
+  type GraphQLType,
+  type GraphQLNamedType,
+  type GraphQLAbstractType,
+  type GraphQLObjectType,
   isAbstractType,
   isObjectType,
   isInterfaceType,
@@ -15,30 +21,22 @@ import {
   isInputObjectType,
   isWrappingType,
 } from './definition';
-import type {
-  GraphQLType,
-  GraphQLNamedType,
-  GraphQLAbstractType,
-  GraphQLObjectType,
-} from './definition';
-import type {
-  SchemaDefinitionNode,
-  SchemaExtensionNode,
+import {
+  type SchemaDefinitionNode,
+  type SchemaExtensionNode,
 } from '../language/ast';
 import {
   GraphQLDirective,
   isDirective,
   specifiedDirectives,
 } from './directives';
-import type { GraphQLError } from '../error/GraphQLError';
+import { type GraphQLError } from '../error/GraphQLError';
 import inspect from '../jsutils/inspect';
 import { __Schema } from './introspection';
 import defineToStringTag from '../jsutils/defineToStringTag';
-import find from '../jsutils/find';
 import instanceOf from '../jsutils/instanceOf';
 import invariant from '../jsutils/invariant';
-import objectValues from '../jsutils/objectValues';
-import type { ObjMap } from '../jsutils/ObjMap';
+import { type ObjMap } from '../jsutils/ObjMap';
 
 /**
  * Test if the given value is a GraphQL schema.
@@ -48,6 +46,14 @@ declare function isSchema(schema: mixed): boolean %checks(schema instanceof
 // eslint-disable-next-line no-redeclare
 export function isSchema(schema) {
   return instanceOf(schema, GraphQLSchema);
+}
+
+export function assertSchema(schema: mixed): GraphQLSchema {
+  invariant(
+    isSchema(schema),
+    `Expected ${inspect(schema)} to be a GraphQL schema.`,
+  );
+  return schema;
 }
 
 /**
@@ -62,6 +68,43 @@ export function isSchema(schema) {
  *     const MyAppSchema = new GraphQLSchema({
  *       query: MyAppQueryRootType,
  *       mutation: MyAppMutationRootType,
+ *     })
+ *
+ * Note: When the schema is constructed, by default only the types that are
+ * reachable by traversing the root types are included, other types must be
+ * explicitly referenced.
+ *
+ * Example:
+ *
+ *     const characterInterface = new GraphQLInterfaceType({
+ *       name: 'Character',
+ *       ...
+ *     });
+ *
+ *     const humanType = new GraphQLObjectType({
+ *       name: 'Human',
+ *       interfaces: [characterInterface],
+ *       ...
+ *     });
+ *
+ *     const droidType = new GraphQLObjectType({
+ *       name: 'Droid',
+ *       interfaces: [characterInterface],
+ *       ...
+ *     });
+ *
+ *     const schema = new GraphQLSchema({
+ *       query: new GraphQLObjectType({
+ *         name: 'Query',
+ *         fields: {
+ *           hero: { type: characterInterface, ... },
+ *         }
+ *       }),
+ *       ...
+ *       // Since this schema references only the `Character` interface it's
+ *       // necessary to explicitly list the types that implement it if
+ *       // you want them to be included in the final schema.
+ *       types: [humanType, droidType],
  *     })
  *
  * Note: If an array of `directives` are provided to GraphQLSchema, that will be
@@ -85,7 +128,7 @@ export class GraphQLSchema {
   _directives: $ReadOnlyArray<GraphQLDirective>;
   _typeMap: TypeMap;
   _implementations: ObjMap<Array<GraphQLObjectType>>;
-  _possibleTypeMap: ?ObjMap<ObjMap<boolean>>;
+  _possibleTypeMap: ObjMap<ObjMap<boolean>>;
   // Used as a cache for validateSchema().
   __validationErrors: ?$ReadOnlyArray<GraphQLError>;
   // Referenced by validateSchema().
@@ -97,6 +140,8 @@ export class GraphQLSchema {
     if (config && config.assumeValid) {
       this.__validationErrors = [];
     } else {
+      this.__validationErrors = undefined;
+
       // Otherwise check for common mistakes during construction to produce
       // clear and early error messages.
       invariant(
@@ -153,10 +198,11 @@ export class GraphQLSchema {
     // Storing the resulting map for reference by the schema.
     this._typeMap = typeMap;
 
+    this._possibleTypeMap = Object.create(null);
+
     // Keep track of all implementations by interface name.
     this._implementations = Object.create(null);
-    for (const typeName of Object.keys(this._typeMap)) {
-      const type = this._typeMap[typeName];
+    for (const type of objectValues(this._typeMap)) {
       if (isObjectType(type)) {
         for (const iface of type.getInterfaces()) {
           if (isInterfaceType(iface)) {
@@ -207,17 +253,14 @@ export class GraphQLSchema {
     abstractType: GraphQLAbstractType,
     possibleType: GraphQLObjectType,
   ): boolean {
-    let possibleTypeMap = this._possibleTypeMap;
-    if (!possibleTypeMap) {
-      this._possibleTypeMap = possibleTypeMap = Object.create(null);
-    }
+    const possibleTypeMap = this._possibleTypeMap;
 
     if (!possibleTypeMap[abstractType.name]) {
       const possibleTypes = this.getPossibleTypes(abstractType);
-      possibleTypeMap[abstractType.name] = possibleTypes.reduce(
-        (map, type) => ((map[type.name] = true), map),
-        Object.create(null),
-      );
+      possibleTypeMap[abstractType.name] = possibleTypes.reduce((map, type) => {
+        map[type.name] = true;
+        return map;
+      }, Object.create(null));
     }
 
     return Boolean(possibleTypeMap[abstractType.name][possibleType.name]);
@@ -229,6 +272,27 @@ export class GraphQLSchema {
 
   getDirective(name: string): ?GraphQLDirective {
     return find(this.getDirectives(), directive => directive.name === name);
+  }
+
+  toConfig(): {|
+    ...GraphQLSchemaConfig,
+    types: Array<GraphQLNamedType>,
+    directives: Array<GraphQLDirective>,
+    extensionASTNodes: $ReadOnlyArray<SchemaExtensionNode>,
+    assumeValid: boolean,
+    allowedLegacyNames: $ReadOnlyArray<string>,
+  |} {
+    return {
+      types: objectValues(this.getTypeMap()),
+      directives: this.getDirectives().slice(),
+      query: this.getQueryType(),
+      mutation: this.getMutationType(),
+      subscription: this.getSubscriptionType(),
+      astNode: this.astNode,
+      extensionASTNodes: this.extensionASTNodes || [],
+      assumeValid: this.__validationErrors !== undefined,
+      allowedLegacyNames: this.__allowedLegacyNames,
+    };
   }
 }
 
@@ -278,7 +342,7 @@ function typeMapReducer(map: TypeMap, type: ?GraphQLType): TypeMap {
   if (map[type.name]) {
     invariant(
       map[type.name] === type,
-      'Schema must contain unique named types but contains multiple ' +
+      'Schema must contain uniquely named types but contains multiple ' +
         `types named "${type.name}".`,
     );
     return map;

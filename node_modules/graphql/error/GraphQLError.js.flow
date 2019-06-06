@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -8,10 +8,9 @@
  */
 
 import { printError } from './printError';
-import { getLocation } from '../language/location';
-import type { SourceLocation } from '../language/location';
-import type { ASTNode } from '../language/ast';
-import type { Source } from '../language/source';
+import { type ASTNode } from '../language/ast';
+import { type Source } from '../language/source';
+import { type SourceLocation, getLocation } from '../language/location';
 
 /**
  * A GraphQLError describes an Error found during the parse, validate, or
@@ -22,7 +21,7 @@ import type { Source } from '../language/source';
 declare class GraphQLError extends Error {
   constructor(
     message: string,
-    nodes?: $ReadOnlyArray<ASTNode> | ASTNode | void,
+    nodes?: $ReadOnlyArray<ASTNode> | ASTNode | void | null,
     source?: ?Source,
     positions?: ?$ReadOnlyArray<number>,
     path?: ?$ReadOnlyArray<string | number>,
@@ -104,8 +103,8 @@ export function GraphQLError( // eslint-disable-line no-redeclare
       ? nodes
       : undefined
     : nodes
-      ? [nodes]
-      : undefined;
+    ? [nodes]
+    : undefined;
 
   // Compute locations in the source for the given nodes/positions.
   let _source = source;
@@ -139,7 +138,13 @@ export function GraphQLError( // eslint-disable-line no-redeclare
     }, []);
   }
 
-  const _extensions = extensions || (originalError && originalError.extensions);
+  let _extensions = extensions;
+  if (_extensions == null && originalError != null) {
+    const originalExtensions = originalError.extensions;
+    if (originalExtensions != null && typeof originalExtensions === 'object') {
+      _extensions = originalExtensions;
+    }
+  }
 
   Object.defineProperties(this, {
     message: {

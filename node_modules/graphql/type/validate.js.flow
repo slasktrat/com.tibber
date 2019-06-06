@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -7,7 +7,16 @@
  * @flow strict
  */
 
+import find from '../polyfills/find';
+import flatMap from '../polyfills/flatMap';
+import objectValues from '../polyfills/objectValues';
+import objectEntries from '../polyfills/objectEntries';
 import {
+  type GraphQLObjectType,
+  type GraphQLInterfaceType,
+  type GraphQLUnionType,
+  type GraphQLEnumType,
+  type GraphQLInputObjectType,
   isObjectType,
   isInterfaceType,
   isUnionType,
@@ -18,30 +27,17 @@ import {
   isOutputType,
   isRequiredArgument,
 } from './definition';
-import type {
-  GraphQLObjectType,
-  GraphQLInterfaceType,
-  GraphQLUnionType,
-  GraphQLEnumType,
-  GraphQLInputObjectType,
-} from './definition';
-import { isDirective } from './directives';
-import type { GraphQLDirective } from './directives';
+import { type GraphQLDirective, isDirective } from './directives';
 import { isIntrospectionType } from './introspection';
-import { isSchema } from './schema';
-import type { GraphQLSchema } from './schema';
+import { type GraphQLSchema, assertSchema } from './schema';
 import inspect from '../jsutils/inspect';
-import find from '../jsutils/find';
-import invariant from '../jsutils/invariant';
-import objectValues from '../jsutils/objectValues';
 import { GraphQLError } from '../error/GraphQLError';
-import type {
-  ASTNode,
-  FieldDefinitionNode,
-  EnumValueDefinitionNode,
-  InputValueDefinitionNode,
-  NamedTypeNode,
-  TypeNode,
+import {
+  type ASTNode,
+  type FieldDefinitionNode,
+  type InputValueDefinitionNode,
+  type NamedTypeNode,
+  type TypeNode,
 } from '../language/ast';
 import { isValidNameError } from '../utilities/assertValidName';
 import { isEqualType, isTypeSubTypeOf } from '../utilities/typeComparators';
@@ -57,10 +53,7 @@ export function validateSchema(
   schema: GraphQLSchema,
 ): $ReadOnlyArray<GraphQLError> {
   // First check to ensure the provided value is in fact a GraphQLSchema.
-  invariant(
-    isSchema(schema),
-    `Expected ${inspect(schema)} to be a GraphQL schema.`,
-  );
+  assertSchema(schema);
 
   // If this Schema has already been validated, return the previous results.
   if (schema.__validationErrors) {
@@ -104,7 +97,7 @@ class SchemaValidationContext {
     message: string,
     nodes?: $ReadOnlyArray<?ASTNode> | ?ASTNode,
   ): void {
-    const _nodes = (Array.isArray(nodes) ? nodes : [nodes]).filter(Boolean);
+    const _nodes = Array.isArray(nodes) ? nodes.filter(Boolean) : nodes;
     this.addError(new GraphQLError(message, _nodes));
   }
 
@@ -284,16 +277,6 @@ function validateFields(
     // Ensure they are named correctly.
     validateName(context, field);
 
-    // Ensure they were defined at most once.
-    const fieldNodes = getAllFieldNodes(type, field.name);
-    if (fieldNodes.length > 1) {
-      context.reportError(
-        `Field ${type.name}.${field.name} can only be defined once.`,
-        fieldNodes,
-      );
-      continue;
-    }
-
     // Ensure the type is an output type
     if (!isOutputType(field.type)) {
       context.reportError(
@@ -369,9 +352,8 @@ function validateObjectImplementsInterface(
   const ifaceFieldMap = iface.getFields();
 
   // Assert each interface field is implemented.
-  for (const fieldName of Object.keys(ifaceFieldMap)) {
+  for (const [fieldName, ifaceField] of objectEntries(ifaceFieldMap)) {
     const objectField = objectFieldMap[fieldName];
-    const ifaceField = ifaceFieldMap[fieldName];
 
     // Assert interface field exists on object.
     if (!objectField) {
@@ -503,15 +485,6 @@ function validateEnumValues(
   for (const enumValue of enumValues) {
     const valueName = enumValue.name;
 
-    // Ensure no duplicates.
-    const allNodes = getEnumValueNodes(enumType, valueName);
-    if (allNodes && allNodes.length > 1) {
-      context.reportError(
-        `Enum type ${enumType.name} can include value ${valueName} only once.`,
-        allNodes,
-      );
-    }
-
     // Ensure valid name.
     validateName(context, enumValue);
     if (valueName === 'true' || valueName === 'false' || valueName === 'null') {
@@ -540,8 +513,6 @@ function validateInputFields(
   for (const field of fields) {
     // Ensure they are named correctly.
     validateName(context, field);
-
-    // TODO: Ensure they are unique per field.
 
     // Ensure the type is an input type
     if (!isInputType(field.type)) {
@@ -574,16 +545,7 @@ function getAllSubNodes<T: ASTNode, K: ASTNode, L: ASTNode>(
   object: SDLDefinedObject<T, K>,
   getter: (T | K) => ?(L | $ReadOnlyArray<L>),
 ): $ReadOnlyArray<L> {
-  let result = [];
-  for (const astNode of getAllNodes(object)) {
-    if (astNode) {
-      const subNodes = getter(astNode);
-      if (subNodes) {
-        result = result.concat(subNodes);
-      }
-    }
-  }
-  return result;
+  return flatMap(getAllNodes(object), item => getter(item) || []);
 }
 
 function getImplementsInterfaceNode(
@@ -606,14 +568,8 @@ function getFieldNode(
   type: GraphQLObjectType | GraphQLInterfaceType,
   fieldName: string,
 ): ?FieldDefinitionNode {
-  return getAllFieldNodes(type, fieldName)[0];
-}
-
-function getAllFieldNodes(
-  type: GraphQLObjectType | GraphQLInterfaceType,
-  fieldName: string,
-): $ReadOnlyArray<FieldDefinitionNode> {
-  return getAllSubNodes(type, typeNode => typeNode.fields).filter(
+  return find(
+    getAllSubNodes(type, typeNode => typeNode.fields),
     fieldNode => fieldNode.name.value === fieldName,
   );
 }
@@ -684,14 +640,5 @@ function getUnionMemberTypeNodes(
 ): ?$ReadOnlyArray<NamedTypeNode> {
   return getAllSubNodes(union, unionNode => unionNode.types).filter(
     typeNode => typeNode.name.value === typeName,
-  );
-}
-
-function getEnumValueNodes(
-  enumType: GraphQLEnumType,
-  valueName: string,
-): ?$ReadOnlyArray<EnumValueDefinitionNode> {
-  return getAllSubNodes(enumType, enumNode => enumNode.values).filter(
-    valueNode => valueNode.name.value === valueName,
   );
 }

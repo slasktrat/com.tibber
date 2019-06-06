@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -8,16 +8,15 @@
  */
 
 import inspect from '../../jsutils/inspect';
-import type { ValidationContext } from '../ValidationContext';
+import { type ValidationContext } from '../ValidationContext';
 import { GraphQLError } from '../../error/GraphQLError';
 import { Kind } from '../../language/kinds';
-import type { ValueNode } from '../../language/ast';
-import type { ASTVisitor } from '../../language/visitor';
-import { isNonNullType } from '../../type/definition';
+import { type ValueNode } from '../../language/ast';
+import { type ASTVisitor } from '../../language/visitor';
+import { type GraphQLType, isNonNullType } from '../../type/definition';
 import { isTypeSubTypeOf } from '../../utilities/typeComparators';
 import { typeFromAST } from '../../utilities/typeFromAST';
-import type { GraphQLType } from '../../type/definition';
-import type { GraphQLSchema } from '../../type/schema';
+import { type GraphQLSchema } from '../../type/schema';
 
 export function badVarPosMessage(
   varName: string,
@@ -98,7 +97,7 @@ function allowedVariableUsage(
 ): boolean {
   if (isNonNullType(locationType) && !isNonNullType(varType)) {
     const hasNonNullVariableDefaultValue =
-      varDefaultValue && varDefaultValue.kind !== Kind.NULL;
+      varDefaultValue != null && varDefaultValue.kind !== Kind.NULL;
     const hasLocationDefaultValue = locationDefaultValue !== undefined;
     if (!hasNonNullVariableDefaultValue && !hasLocationDefaultValue) {
       return false;

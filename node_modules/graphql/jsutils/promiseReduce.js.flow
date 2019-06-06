@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -8,7 +8,7 @@
  */
 
 import isPromise from './isPromise';
-import type { MaybePromise } from './MaybePromise';
+import { type PromiseOrValue } from './PromiseOrValue';
 
 /**
  * Similar to Array.prototype.reduce(), however the reducing callback may return
@@ -19,9 +19,9 @@ import type { MaybePromise } from './MaybePromise';
  */
 export default function promiseReduce<T, U>(
   values: $ReadOnlyArray<T>,
-  callback: (U, T) => MaybePromise<U>,
-  initialValue: MaybePromise<U>,
-): MaybePromise<U> {
+  callback: (U, T) => PromiseOrValue<U>,
+  initialValue: PromiseOrValue<U>,
+): PromiseOrValue<U> {
   return values.reduce(
     (previous, value) =>
       isPromise(previous)

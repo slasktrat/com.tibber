@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -7,16 +7,16 @@
  * @flow strict
  */
 
-import type {
-  ValidationContext,
-  SDLValidationContext,
+import {
+  type ValidationContext,
+  type SDLValidationContext,
 } from '../ValidationContext';
 import { GraphQLError } from '../../error/GraphQLError';
 import { Kind } from '../../language/kinds';
 import inspect from '../../jsutils/inspect';
 import keyMap from '../../jsutils/keyMap';
 import { isType, isRequiredArgument } from '../../type/definition';
-import type { ASTVisitor } from '../../language/visitor';
+import { type ASTVisitor } from '../../language/visitor';
 import { print } from '../../language/printer';
 import { specifiedDirectives } from '../../type/directives';
 
@@ -27,7 +27,7 @@ export function missingFieldArgMessage(
 ): string {
   return (
     `Field "${fieldName}" argument "${argName}" of type ` +
-    `"${type}" is required but not provided.`
+    `"${type}" is required, but it was not provided.`
   );
 }
 
@@ -38,7 +38,7 @@ export function missingDirectiveArgMessage(
 ): string {
   return (
     `Directive "@${directiveName}" argument "${argName}" of type ` +
-    `"${type}" is required but not provided.`
+    `"${type}" is required, but it was not provided.`
   );
 }
 
@@ -73,7 +73,7 @@ export function ProvidedRequiredArguments(
                   argDef.name,
                   inspect(argDef.type),
                 ),
-                [fieldNode],
+                fieldNode,
               ),
             );
           }

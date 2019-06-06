@@ -198,6 +198,9 @@ class MyDevice extends Homey.Device {
 
     async onData(data) {
         const priceInfoCurrent = _.get(data, 'viewer.home.currentSubscription.priceInfo.current');
+        if(!priceInfoCurrent)
+            return;
+
         const loggerPrefix = this.getDriver().getDevices().length > 1 ? (`${this._deviceLabel} `) : '';
 
         if(_.get(priceInfoCurrent, 'startsAt') !== _.get(this._lastPrice, 'startsAt')) {

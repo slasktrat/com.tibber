@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -7,14 +7,14 @@
  * @flow strict
  */
 
-import type {
-  ValidationContext,
-  SDLValidationContext,
+import {
+  type ValidationContext,
+  type SDLValidationContext,
 } from '../ValidationContext';
 import { GraphQLError } from '../../error/GraphQLError';
 import { Kind } from '../../language/kinds';
 import { DirectiveLocation } from '../../language/directiveLocation';
-import type { ASTVisitor } from '../../language/visitor';
+import { type ASTVisitor } from '../../language/visitor';
 import { specifiedDirectives } from '../../type/directives';
 
 export function unknownDirectiveMessage(directiveName: string): string {
@@ -61,16 +61,17 @@ export function KnownDirectives(
 
       if (!locations) {
         context.reportError(
-          new GraphQLError(unknownDirectiveMessage(name), [node]),
+          new GraphQLError(unknownDirectiveMessage(name), node),
         );
         return;
       }
       const candidateLocation = getDirectiveLocationForASTPath(ancestors);
       if (candidateLocation && locations.indexOf(candidateLocation) === -1) {
         context.reportError(
-          new GraphQLError(misplacedDirectiveMessage(name, candidateLocation), [
+          new GraphQLError(
+            misplacedDirectiveMessage(name, candidateLocation),
             node,
-          ]),
+          ),
         );
       }
     },
@@ -126,11 +127,12 @@ function getDirectiveLocationForASTPath(ancestors) {
       case Kind.INPUT_OBJECT_TYPE_DEFINITION:
       case Kind.INPUT_OBJECT_TYPE_EXTENSION:
         return DirectiveLocation.INPUT_OBJECT;
-      case Kind.INPUT_VALUE_DEFINITION:
+      case Kind.INPUT_VALUE_DEFINITION: {
         const parentNode = ancestors[ancestors.length - 3];
         return parentNode.kind === Kind.INPUT_OBJECT_TYPE_DEFINITION
           ? DirectiveLocation.INPUT_FIELD_DEFINITION
           : DirectiveLocation.ARGUMENT_DEFINITION;
+      }
     }
   }
 }

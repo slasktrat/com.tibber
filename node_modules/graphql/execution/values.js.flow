@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -7,8 +7,8 @@
  * @flow strict
  */
 
+import find from '../polyfills/find';
 import { GraphQLError } from '../error/GraphQLError';
-import find from '../jsutils/find';
 import inspect from '../jsutils/inspect';
 import invariant from '../jsutils/invariant';
 import keyMap from '../jsutils/keyMap';
@@ -17,15 +17,18 @@ import { typeFromAST } from '../utilities/typeFromAST';
 import { valueFromAST } from '../utilities/valueFromAST';
 import { Kind } from '../language/kinds';
 import { print } from '../language/printer';
-import { isInputType, isNonNullType } from '../type/definition';
-import type { ObjMap } from '../jsutils/ObjMap';
-import type { GraphQLField } from '../type/definition';
-import type { GraphQLDirective } from '../type/directives';
-import type { GraphQLSchema } from '../type/schema';
-import type {
-  FieldNode,
-  DirectiveNode,
-  VariableDefinitionNode,
+import {
+  type GraphQLField,
+  isInputType,
+  isNonNullType,
+} from '../type/definition';
+import { type GraphQLDirective } from '../type/directives';
+import { type ObjMap } from '../jsutils/ObjMap';
+import { type GraphQLSchema } from '../type/schema';
+import {
+  type FieldNode,
+  type DirectiveNode,
+  type VariableDefinitionNode,
 } from '../language/ast';
 
 type CoercedVariableValues = {|
@@ -62,7 +65,7 @@ export function getVariableValues(
             `"${print(
               varDefNode.type,
             )}" which cannot be used as an input type.`,
-          [varDefNode.type],
+          varDefNode.type,
         ),
       );
     } else {
@@ -82,7 +85,7 @@ export function getVariableValues(
                 `"${inspect(varType)}" must not be null.`
               : `Variable "$${varName}" of required type ` +
                 `"${inspect(varType)}" was not provided.`,
-            [varDefNode],
+            varDefNode,
           ),
         );
       } else if (hasValue) {
@@ -143,11 +146,12 @@ export function getArgumentValues(
     let isNull;
     if (argumentNode && argumentNode.value.kind === Kind.VARIABLE) {
       const variableName = argumentNode.value.name.value;
-      hasValue = variableValues && hasOwnProperty(variableValues, variableName);
-      isNull = variableValues && variableValues[variableName] === null;
+      hasValue =
+        variableValues != null && hasOwnProperty(variableValues, variableName);
+      isNull = variableValues != null && variableValues[variableName] === null;
     } else {
       hasValue = argumentNode != null;
-      isNull = argumentNode && argumentNode.value.kind === Kind.NULL;
+      isNull = argumentNode != null && argumentNode.value.kind === Kind.NULL;
     }
 
     if (!hasValue && argDef.defaultValue !== undefined) {
@@ -161,7 +165,7 @@ export function getArgumentValues(
         throw new GraphQLError(
           `Argument "${name}" of non-null type "${inspect(argType)}" ` +
             'must not be null.',
-          [argumentNode.value],
+          argumentNode.value,
         );
       } else if (argumentNode && argumentNode.value.kind === Kind.VARIABLE) {
         const variableName = argumentNode.value.name.value;
@@ -169,13 +173,13 @@ export function getArgumentValues(
           `Argument "${name}" of required type "${inspect(argType)}" ` +
             `was provided the variable "$${variableName}" ` +
             'which was not provided a runtime value.',
-          [argumentNode.value],
+          argumentNode.value,
         );
       } else {
         throw new GraphQLError(
           `Argument "${name}" of required type "${inspect(argType)}" ` +
             'was not provided.',
-          [node],
+          node,
         );
       }
     } else if (hasValue) {
@@ -199,7 +203,7 @@ export function getArgumentValues(
           // continue with an invalid argument value.
           throw new GraphQLError(
             `Argument "${name}" has invalid value ${print(valueNode)}.`,
-            [argumentNode.value],
+            argumentNode.value,
           );
         }
         coercedValues[name] = coercedValue;

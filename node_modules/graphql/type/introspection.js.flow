@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -7,11 +7,12 @@
  * @flow strict
  */
 
-import isInvalid from '../jsutils/isInvalid';
-import objectValues from '../jsutils/objectValues';
+import objectValues from '../polyfills/objectValues';
+import inspect from '../jsutils/inspect';
 import { astFromValue } from '../utilities/astFromValue';
 import { print } from '../language/printer';
 import {
+  type GraphQLField,
   GraphQLObjectType,
   GraphQLEnumType,
   GraphQLList,
@@ -29,7 +30,6 @@ import {
 } from './definition';
 import { GraphQLString, GraphQLBoolean } from './scalars';
 import { DirectiveLocation } from '../language/directiveLocation';
-import type { GraphQLField } from './definition';
 
 export const __Schema = new GraphQLObjectType({
   name: '__Schema',
@@ -218,7 +218,10 @@ export const __Type = new GraphQLObjectType({
         } else if (isNonNullType(type)) {
           return TypeKind.NON_NULL;
         }
-        throw new Error('Unknown kind of type: ' + type);
+
+        // Not reachable. All possible types have been considered.
+        /* istanbul ignore next */
+        throw new Error(`Unexpected type: "${inspect((type: empty))}".`);
       },
     },
     name: {
@@ -348,10 +351,10 @@ export const __InputValue = new GraphQLObjectType({
       description:
         'A GraphQL-formatted string representing the default value for this ' +
         'input value.',
-      resolve: inputVal =>
-        isInvalid(inputVal.defaultValue)
-          ? null
-          : print(astFromValue(inputVal.defaultValue, inputVal.type)),
+      resolve(inputVal) {
+        const valueAST = astFromValue(inputVal.defaultValue, inputVal.type);
+        return valueAST ? print(valueAST) : null;
+      },
     },
   }),
 });
@@ -484,15 +487,6 @@ export const introspectionTypes: $ReadOnlyArray<*> = [
 export function isIntrospectionType(type: mixed): boolean %checks {
   return (
     isNamedType(type) &&
-    // Would prefer to use introspectionTypes.some(), however %checks needs
-    // a simple expression.
-    (type.name === __Schema.name ||
-      type.name === __Directive.name ||
-      type.name === __DirectiveLocation.name ||
-      type.name === __Type.name ||
-      type.name === __Field.name ||
-      type.name === __InputValue.name ||
-      type.name === __EnumValue.name ||
-      type.name === __TypeKind.name)
+    introspectionTypes.some(({ name }) => type.name === name)
   );
 }

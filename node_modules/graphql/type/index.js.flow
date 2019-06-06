@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -10,6 +10,8 @@
 export {
   // Predicate
   isSchema,
+  // Assertion
+  assertSchema,
   // GraphQL Schema definition
   GraphQLSchema,
 } from './schema';
@@ -73,6 +75,8 @@ export {
 export {
   // Predicate
   isDirective,
+  // Assertion
+  assertDirective,
   // Directives Definition
   GraphQLDirective,
   // Built-in Directives defined by the Spec
@@ -89,7 +93,9 @@ export type { GraphQLDirectiveConfig } from './directives';
 
 // Common built-in scalar instances.
 export {
+  // Predicate
   isSpecifiedScalarType,
+  // Standard GraphQL Scalars
   specifiedScalarTypes,
   GraphQLInt,
   GraphQLFloat,
@@ -99,10 +105,9 @@ export {
 } from './scalars';
 
 export {
-  // "Enum" of Type Kinds
-  TypeKind,
-  // GraphQL Types for introspection.
+  // Predicate
   isIntrospectionType,
+  // GraphQL Types for introspection.
   introspectionTypes,
   __Schema,
   __Directive,
@@ -112,6 +117,8 @@ export {
   __InputValue,
   __EnumValue,
   __TypeKind,
+  // "Enum" of Type Kinds
+  TypeKind,
   // Meta-field definitions.
   SchemaMetaFieldDef,
   TypeMetaFieldDef,
@@ -159,4 +166,5 @@ export type {
   GraphQLScalarLiteralParser,
 } from './definition';
 
+// Validate GraphQL schema.
 export { validateSchema, assertValidSchema } from './validate';

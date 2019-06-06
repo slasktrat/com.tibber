@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -8,9 +8,9 @@
  */
 
 import inspect from '../../jsutils/inspect';
-import type { ValidationContext } from '../ValidationContext';
+import { type ValidationContext } from '../ValidationContext';
 import { GraphQLError } from '../../error/GraphQLError';
-import type { ASTVisitor } from '../../language/visitor';
+import { type ASTVisitor } from '../../language/visitor';
 import { doTypesOverlap } from '../../utilities/typeComparators';
 import { typeFromAST } from '../../utilities/typeFromAST';
 import { isCompositeType } from '../../type/definition';
@@ -61,7 +61,7 @@ export function PossibleFragmentSpreads(
               inspect(parentType),
               inspect(fragType),
             ),
-            [node],
+            node,
           ),
         );
       }
@@ -82,7 +82,7 @@ export function PossibleFragmentSpreads(
               inspect(parentType),
               inspect(fragType),
             ),
-            [node],
+            node,
           ),
         );
       }

@@ -45,6 +45,9 @@ Integration with Tibber, with Pulse support!
 &nbsp;
 ### Release Notes
 
+#### 1.0.11
+- Fixed app crashing on api timeout #14
+&nbsp;
 #### 1.0.10
 - Fixed weather forecast (#13)
 &nbsp;  

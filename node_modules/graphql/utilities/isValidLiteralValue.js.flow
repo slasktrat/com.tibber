@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -8,11 +8,11 @@
  */
 
 import { TypeInfo } from './TypeInfo';
-import type { GraphQLError } from '../error/GraphQLError';
-import type { ValueNode } from '../language/ast';
+import { type GraphQLError } from '../error/GraphQLError';
+import { type ValueNode } from '../language/ast';
 import { Kind } from '../language/kinds';
 import { visit, visitWithTypeInfo } from '../language/visitor';
-import type { GraphQLInputType } from '../type/definition';
+import { type GraphQLInputType } from '../type/definition';
 import { GraphQLSchema } from '../type/schema';
 import { ValuesOfCorrectType } from '../validation/rules/ValuesOfCorrectType';
 import { ValidationContext } from '../validation/ValidationContext';

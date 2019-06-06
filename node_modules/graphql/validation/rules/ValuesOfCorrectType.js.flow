@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -7,12 +7,14 @@
  * @flow strict
  */
 
-import type { ValidationContext } from '../ValidationContext';
+import objectValues from '../../polyfills/objectValues';
+import { type ValidationContext } from '../ValidationContext';
 import { GraphQLError } from '../../error/GraphQLError';
-import type { ValueNode } from '../../language/ast';
+import { type ValueNode } from '../../language/ast';
 import { print } from '../../language/printer';
-import type { ASTVisitor } from '../../language/visitor';
+import { type ASTVisitor } from '../../language/visitor';
 import {
+  type GraphQLType,
   isScalarType,
   isEnumType,
   isInputObjectType,
@@ -22,7 +24,6 @@ import {
   getNullableType,
   getNamedType,
 } from '../../type/definition';
-import type { GraphQLType } from '../../type/definition';
 import inspect from '../../jsutils/inspect';
 import isInvalid from '../../jsutils/isInvalid';
 import keyMap from '../../jsutils/keyMap';
@@ -94,16 +95,14 @@ export function ValuesOfCorrectType(context: ValidationContext): ASTVisitor {
         return false; // Don't traverse further.
       }
       // Ensure every required field exists.
-      const inputFields = type.getFields();
       const fieldNodeMap = keyMap(node.fields, field => field.name.value);
-      for (const fieldName of Object.keys(inputFields)) {
-        const fieldDef = inputFields[fieldName];
-        const fieldNode = fieldNodeMap[fieldName];
+      for (const fieldDef of objectValues(type.getFields())) {
+        const fieldNode = fieldNodeMap[fieldDef.name];
         if (!fieldNode && isRequiredInputField(fieldDef)) {
           const typeStr = inspect(fieldDef.type);
           context.reportError(
             new GraphQLError(
-              requiredFieldMessage(type.name, fieldName, typeStr),
+              requiredFieldMessage(type.name, fieldDef.name, typeStr),
               node,
             ),
           );

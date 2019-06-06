@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -7,9 +7,9 @@
  * @flow strict
  */
 
-import type { ValidationContext } from '../ValidationContext';
+import { type ASTValidationContext } from '../ValidationContext';
 import { GraphQLError } from '../../error/GraphQLError';
-import type { ASTVisitor } from '../../language/visitor';
+import { type ASTVisitor } from '../../language/visitor';
 
 export function unusedFragMessage(fragName: string): string {
   return `Fragment "${fragName}" is never used.`;
@@ -21,7 +21,7 @@ export function unusedFragMessage(fragName: string): string {
  * A GraphQL document is only valid if all fragment definitions are spread
  * within operations, or spread within other fragments spread within operations.
  */
-export function NoUnusedFragments(context: ValidationContext): ASTVisitor {
+export function NoUnusedFragments(context: ASTValidationContext): ASTVisitor {
   const operationDefs = [];
   const fragmentDefs = [];
 
@@ -49,7 +49,7 @@ export function NoUnusedFragments(context: ValidationContext): ASTVisitor {
           const fragName = fragmentDef.name.value;
           if (fragmentNameUsed[fragName] !== true) {
             context.reportError(
-              new GraphQLError(unusedFragMessage(fragName), [fragmentDef]),
+              new GraphQLError(unusedFragMessage(fragName), fragmentDef),
             );
           }
         }

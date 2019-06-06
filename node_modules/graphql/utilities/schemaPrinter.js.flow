@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -7,28 +7,27 @@
  * @flow strict
  */
 
-import isNullish from '../jsutils/isNullish';
-import isInvalid from '../jsutils/isInvalid';
-import objectValues from '../jsutils/objectValues';
+import flatMap from '../polyfills/flatMap';
+import objectValues from '../polyfills/objectValues';
+import inspect from '../jsutils/inspect';
 import { astFromValue } from '../utilities/astFromValue';
 import { print } from '../language/printer';
-import type { GraphQLSchema } from '../type/schema';
+import { printBlockString } from '../language/blockString';
+import { type GraphQLSchema } from '../type/schema';
 import {
+  type GraphQLNamedType,
+  type GraphQLScalarType,
+  type GraphQLEnumType,
+  type GraphQLObjectType,
+  type GraphQLInterfaceType,
+  type GraphQLUnionType,
+  type GraphQLInputObjectType,
   isScalarType,
   isObjectType,
   isInterfaceType,
   isUnionType,
   isEnumType,
   isInputObjectType,
-} from '../type/definition';
-import type {
-  GraphQLNamedType,
-  GraphQLScalarType,
-  GraphQLEnumType,
-  GraphQLObjectType,
-  GraphQLInterfaceType,
-  GraphQLUnionType,
-  GraphQLInputObjectType,
 } from '../type/definition';
 import { GraphQLString, isSpecifiedScalarType } from '../type/scalars';
 import {
@@ -175,8 +174,10 @@ export function printType(type: GraphQLNamedType, options?: Options): string {
   } else if (isInputObjectType(type)) {
     return printInputObject(type, options);
   }
+
+  // Not reachable. All possible types have been considered.
   /* istanbul ignore next */
-  throw new Error(`Unknown type: ${(type: empty)}.`);
+  throw new Error(`Unexpected type: "${inspect((type: empty))}".`);
 }
 
 function printScalar(type: GraphQLScalarType, options): string {
@@ -190,82 +191,67 @@ function printObject(type: GraphQLObjectType, options): string {
     : '';
   return (
     printDescription(options, type) +
-    `type ${type.name}${implementedInterfaces} {\n` +
-    printFields(options, type) +
-    '\n' +
-    '}'
+    `type ${type.name}${implementedInterfaces}` +
+    printFields(options, type)
   );
 }
 
 function printInterface(type: GraphQLInterfaceType, options): string {
   return (
     printDescription(options, type) +
-    `interface ${type.name} {\n` +
-    printFields(options, type) +
-    '\n' +
-    '}'
+    `interface ${type.name}` +
+    printFields(options, type)
   );
 }
 
 function printUnion(type: GraphQLUnionType, options): string {
-  return (
-    printDescription(options, type) +
-    `union ${type.name} = ${type.getTypes().join(' | ')}`
-  );
+  const types = type.getTypes();
+  const possibleTypes = types.length ? ' = ' + types.join(' | ') : '';
+  return printDescription(options, type) + 'union ' + type.name + possibleTypes;
 }
 
 function printEnum(type: GraphQLEnumType, options): string {
-  return (
-    printDescription(options, type) +
-    `enum ${type.name} {\n` +
-    printEnumValues(type.getValues(), options) +
-    '\n' +
-    '}'
-  );
-}
-
-function printEnumValues(values, options): string {
-  return values
+  const values = type
+    .getValues()
     .map(
       (value, i) =>
         printDescription(options, value, '  ', !i) +
         '  ' +
         value.name +
         printDeprecated(value),
-    )
-    .join('\n');
+    );
+
+  return (
+    printDescription(options, type) + `enum ${type.name}` + printBlock(values)
+  );
 }
 
 function printInputObject(type: GraphQLInputObjectType, options): string {
-  const fields = objectValues(type.getFields());
+  const fields = objectValues(type.getFields()).map(
+    (f, i) =>
+      printDescription(options, f, '  ', !i) + '  ' + printInputValue(f),
+  );
   return (
-    printDescription(options, type) +
-    `input ${type.name} {\n` +
-    fields
-      .map(
-        (f, i) =>
-          printDescription(options, f, '  ', !i) + '  ' + printInputValue(f),
-      )
-      .join('\n') +
-    '\n' +
-    '}'
+    printDescription(options, type) + `input ${type.name}` + printBlock(fields)
   );
 }
 
 function printFields(options, type) {
-  const fields = objectValues(type.getFields());
-  return fields
-    .map(
-      (f, i) =>
-        printDescription(options, f, '  ', !i) +
-        '  ' +
-        f.name +
-        printArgs(options, f.args, '  ') +
-        ': ' +
-        String(f.type) +
-        printDeprecated(f),
-    )
-    .join('\n');
+  const fields = objectValues(type.getFields()).map(
+    (f, i) =>
+      printDescription(options, f, '  ', !i) +
+      '  ' +
+      f.name +
+      printArgs(options, f.args, '  ') +
+      ': ' +
+      String(f.type) +
+      printDeprecated(f),
+  );
+  return printBlock(fields);
+}
+
+function printBlock(items) {
+  return items.length !== 0 ? ' {\n' + items.join('\n') + '\n}' : '';
 }
 
 function printArgs(options, args, indentation = '') {
@@ -296,9 +282,10 @@ function printArgs(options, args, indentation = '') {
 }
 
 function printInputValue(arg) {
+  const defaultAST = astFromValue(arg.defaultValue, arg.type);
   let argDecl = arg.name + ': ' + String(arg.type);
-  if (!isInvalid(arg.defaultValue)) {
-    argDecl += ` = ${print(astFromValue(arg.defaultValue, arg.type))}`;
+  if (defaultAST) {
+    argDecl += ` = ${print(defaultAST)}`;
   }
   return argDecl;
 }
@@ -319,16 +306,11 @@ function printDeprecated(fieldOrEnumVal) {
     return '';
   }
   const reason = fieldOrEnumVal.deprecationReason;
-  if (
-    isNullish(reason) ||
-    reason === '' ||
-    reason === DEFAULT_DEPRECATION_REASON
-  ) {
-    return ' @deprecated';
+  const reasonAST = astFromValue(reason, GraphQLString);
+  if (reasonAST && reason !== '' && reason !== DEFAULT_DEPRECATION_REASON) {
+    return ' @deprecated(reason: ' + print(reasonAST) + ')';
   }
-  return (
-    ' @deprecated(reason: ' + print(astFromValue(reason, GraphQLString)) + ')'
-  );
+  return ' @deprecated';
 }
 
 function printDescription(
@@ -346,37 +328,13 @@ function printDescription(
     return printDescriptionWithComments(lines, indentation, firstInBlock);
   }
 
-  let description =
-    indentation && !firstInBlock
-      ? '\n' + indentation + '"""'
-      : indentation + '"""';
+  const text = lines.join('\n');
+  const preferMultipleLines = text.length > 70;
+  const blockString = printBlockString(text, '', preferMultipleLines);
+  const prefix =
+    indentation && !firstInBlock ? '\n' + indentation : indentation;
 
-  // In some circumstances, a single line can be used for the description.
-  if (
-    lines.length === 1 &&
-    lines[0].length < 70 &&
-    lines[0][lines[0].length - 1] !== '"'
-  ) {
-    return description + escapeQuote(lines[0]) + '"""\n';
-  }
-
-  // Format a multi-line block quote to account for leading space.
-  const hasLeadingSpace = lines[0][0] === ' ' || lines[0][0] === '\t';
-  if (!hasLeadingSpace) {
-    description += '\n';
-  }
-  for (let i = 0; i < lines.length; i++) {
-    if (i !== 0 || !hasLeadingSpace) {
-      description += indentation;
-    }
-    description += escapeQuote(lines[i]) + '\n';
-  }
-  description += indentation + '"""\n';
-  return description;
-}
-
-function escapeQuote(line) {
-  return line.replace(/"""/g, '\\"""');
+  return prefix + blockString.replace(/\n/g, '\n' + indentation) + '\n';
 }
 
 function printDescriptionWithComments(lines, indentation, firstInBlock) {
@@ -392,27 +350,18 @@ function printDescriptionWithComments(lines, indentation, firstInBlock) {
 }
 
 function descriptionLines(description: string, maxLen: number): Array<string> {
-  const lines = [];
   const rawLines = description.split('\n');
-  for (let i = 0; i < rawLines.length; i++) {
-    if (rawLines[i] === '') {
-      lines.push(rawLines[i]);
-    } else {
-      // For > 120 character long lines, cut at space boundaries into sublines
-      // of ~80 chars.
-      const sublines = breakLine(rawLines[i], maxLen);
-      for (let j = 0; j < sublines.length; j++) {
-        lines.push(sublines[j]);
-      }
+  return flatMap(rawLines, line => {
+    if (line.length < maxLen + 5) {
+      return line;
     }
-  }
-  return lines;
+    // For > 120 character long lines, cut at space boundaries into sublines
+    // of ~80 chars.
+    return breakLine(line, maxLen);
+  });
 }
 
 function breakLine(line: string, maxLen: number): Array<string> {
-  if (line.length < maxLen + 5) {
-    return [line];
-  }
   const parts = line.split(new RegExp(`((?: |^).{15,${maxLen - 40}}(?= |$))`));
   if (parts.length < 4) {
     return [line];

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -7,14 +7,22 @@
  * @flow strict
  */
 
+export { Source } from './source';
+
 export { getLocation } from './location';
 export type { SourceLocation } from './location';
+
 export { Kind } from './kinds';
 export type { KindEnum } from './kinds';
+
 export { createLexer, TokenKind } from './lexer';
+export type { Lexer, TokenKindEnum } from './lexer';
+
 export { parse, parseValue, parseType } from './parser';
+export type { ParseOptions } from './parser';
+
 export { print } from './printer';
-export { Source } from './source';
+
 export {
   visit,
   visitInParallel,
@@ -23,9 +31,6 @@ export {
   BREAK,
 } from './visitor';
 export type { ASTVisitor, Visitor, VisitFn, VisitorKeyMap } from './visitor';
-
-export type { Lexer, TokenKindEnum } from './lexer';
-export type { ParseOptions } from './parser';
 
 export type {
   Location,

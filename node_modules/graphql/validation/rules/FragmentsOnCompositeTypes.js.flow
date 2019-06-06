@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -7,10 +7,10 @@
  * @flow strict
  */
 
-import type { ValidationContext } from '../ValidationContext';
+import { type ValidationContext } from '../ValidationContext';
 import { GraphQLError } from '../../error/GraphQLError';
 import { print } from '../../language/printer';
-import type { ASTVisitor } from '../../language/visitor';
+import { type ASTVisitor } from '../../language/visitor';
 import { isCompositeType } from '../../type/definition';
 import { typeFromAST } from '../../utilities/typeFromAST';
 
@@ -47,7 +47,7 @@ export function FragmentsOnCompositeTypes(
           context.reportError(
             new GraphQLError(
               inlineFragmentOnNonCompositeErrorMessage(print(typeCondition)),
-              [typeCondition],
+              typeCondition,
             ),
           );
         }
@@ -62,7 +62,7 @@ export function FragmentsOnCompositeTypes(
               node.name.value,
               print(node.typeCondition),
             ),
-            [node.typeCondition],
+            node.typeCondition,
           ),
         );
       }

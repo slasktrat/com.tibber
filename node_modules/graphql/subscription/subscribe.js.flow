@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2017-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -12,6 +12,7 @@ import inspect from '../jsutils/inspect';
 import { GraphQLError } from '../error/GraphQLError';
 import { locatedError } from '../error/locatedError';
 import {
+  type ExecutionResult,
   addPath,
   assertValidExecutionArguments,
   buildExecutionContext,
@@ -22,13 +23,12 @@ import {
   resolveFieldValueOrError,
   responsePathAsArray,
 } from '../execution/execute';
-import type { GraphQLSchema } from '../type/schema';
+import { type GraphQLSchema } from '../type/schema';
 import mapAsyncIterator from './mapAsyncIterator';
 
-import type { ObjMap } from '../jsutils/ObjMap';
-import type { ExecutionResult } from '../execution/execute';
-import type { DocumentNode } from '../language/ast';
-import type { GraphQLFieldResolver } from '../type/definition';
+import { type ObjMap } from '../jsutils/ObjMap';
+import { type DocumentNode } from '../language/ast';
+import { type GraphQLFieldResolver } from '../type/definition';
 import { getOperationRootType } from '../utilities/getOperationRootType';
 
 /**

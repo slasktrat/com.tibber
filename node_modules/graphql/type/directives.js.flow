@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -7,17 +7,20 @@
  * @flow strict
  */
 
-import type {
-  GraphQLFieldConfigArgumentMap,
-  GraphQLArgument,
+import objectEntries from '../polyfills/objectEntries';
+import {
+  type GraphQLFieldConfigArgumentMap,
+  type GraphQLArgument,
+  argsToArgsConfig,
+  GraphQLNonNull,
 } from './definition';
-import { GraphQLNonNull } from './definition';
 import { GraphQLString, GraphQLBoolean } from './scalars';
 import defineToStringTag from '../jsutils/defineToStringTag';
 import defineToJSON from '../jsutils/defineToJSON';
 import instanceOf from '../jsutils/instanceOf';
 import invariant from '../jsutils/invariant';
-import type { DirectiveDefinitionNode } from '../language/ast';
+import inspect from '../jsutils/inspect';
+import { type DirectiveDefinitionNode } from '../language/ast';
 import {
   DirectiveLocation,
   type DirectiveLocationEnum,
@@ -32,6 +35,14 @@ declare function isDirective(
 // eslint-disable-next-line no-redeclare
 export function isDirective(directive) {
   return instanceOf(directive, GraphQLDirective);
+}
+
+export function assertDirective(directive: mixed): GraphQLDirective {
+  invariant(
+    isDirective(directive),
+    `Expected ${inspect(directive)} to be a GraphQL directive.`,
+  );
+  return directive;
 }
 
 /**
@@ -53,32 +64,39 @@ export class GraphQLDirective {
     invariant(config.name, 'Directive must be named.');
     invariant(
       Array.isArray(config.locations),
-      'Must provide locations for directive.',
+      `@${config.name} locations must be an Array.`,
     );
 
-    const args = config.args;
-    if (!args) {
-      this.args = [];
-    } else {
-      invariant(
-        !Array.isArray(args),
-        `@${config.name} args must be an object with argument names as keys.`,
-      );
-      this.args = Object.keys(args).map(argName => {
-        const arg = args[argName];
-        return {
-          name: argName,
-          description: arg.description === undefined ? null : arg.description,
-          type: arg.type,
-          defaultValue: arg.defaultValue,
-          astNode: arg.astNode,
-        };
-      });
-    }
+    const args = config.args || {};
+    invariant(
+      typeof args === 'object' && !Array.isArray(args),
+      `@${config.name} args must be an object with argument names as keys.`,
+    );
+
+    this.args = objectEntries(args).map(([argName, arg]) => ({
+      name: argName,
+      description: arg.description === undefined ? null : arg.description,
+      type: arg.type,
+      defaultValue: arg.defaultValue,
+      astNode: arg.astNode,
+    }));
   }
 
   toString(): string {
     return '@' + this.name;
+  }
+
+  toConfig(): {|
+    ...GraphQLDirectiveConfig,
+    args: GraphQLFieldConfigArgumentMap,
+  |} {
+    return {
+      name: this.name,
+      description: this.description,
+      locations: this.locations,
+      args: argsToArgsConfig(this.args),
+      astNode: this.astNode,
+    };
   }
 }
 
@@ -169,10 +187,9 @@ export const specifiedDirectives: $ReadOnlyArray<*> = [
   GraphQLDeprecatedDirective,
 ];
 
-export function isSpecifiedDirective(
-  directive: GraphQLDirective,
-): boolean %checks {
-  return specifiedDirectives.some(
-    specifiedDirective => specifiedDirective.name === directive.name,
+export function isSpecifiedDirective(directive: mixed): boolean %checks {
+  return (
+    isDirective(directive) &&
+    specifiedDirectives.some(({ name }) => name === directive.name)
   );
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -7,33 +7,32 @@
  * @flow strict
  */
 
-import type { ValidationContext } from '../ValidationContext';
+import find from '../../polyfills/find';
+import objectEntries from '../../polyfills/objectEntries';
+import { type ValidationContext } from '../ValidationContext';
 import { GraphQLError } from '../../error/GraphQLError';
 import inspect from '../../jsutils/inspect';
-import find from '../../jsutils/find';
-import type { ObjMap } from '../../jsutils/ObjMap';
-import type {
-  SelectionSetNode,
-  FieldNode,
-  ArgumentNode,
-  FragmentDefinitionNode,
+import { type ObjMap } from '../../jsutils/ObjMap';
+import {
+  type SelectionSetNode,
+  type FieldNode,
+  type ArgumentNode,
+  type FragmentDefinitionNode,
 } from '../../language/ast';
 import { Kind } from '../../language/kinds';
 import { print } from '../../language/printer';
-import type { ASTVisitor } from '../../language/visitor';
+import { type ASTVisitor } from '../../language/visitor';
 import {
+  type GraphQLNamedType,
+  type GraphQLOutputType,
+  type GraphQLCompositeType,
+  type GraphQLField,
   getNamedType,
   isNonNullType,
   isLeafType,
   isObjectType,
   isListType,
   isInterfaceType,
-} from '../../type/definition';
-import type {
-  GraphQLNamedType,
-  GraphQLOutputType,
-  GraphQLCompositeType,
-  GraphQLField,
 } from '../../type/definition';
 import { typeFromAST } from '../../utilities/typeFromAST';
 
@@ -485,8 +484,7 @@ function collectConflictsWithin(
   // name and the value at that key is a list of all fields which provide that
   // response name. For every response name, if there are multiple fields, they
   // must be compared to find a potential conflict.
-  for (const responseName of Object.keys(fieldMap)) {
-    const fields = fieldMap[responseName];
+  for (const [responseName, fields] of objectEntries(fieldMap)) {
     // This compares every field in the list to every other field in this list
     // (except to itself). If the list only has one item, nothing needs to
     // be compared.
@@ -749,7 +747,7 @@ function _collectFieldsAndFragmentNames(
   for (let i = 0; i < selectionSet.selections.length; i++) {
     const selection = selectionSet.selections[i];
     switch (selection.kind) {
-      case Kind.FIELD:
+      case Kind.FIELD: {
         const fieldName = selection.name.value;
         let fieldDef;
         if (isObjectType(parentType) || isInterfaceType(parentType)) {
@@ -763,10 +761,11 @@ function _collectFieldsAndFragmentNames(
         }
         nodeAndDefs[responseName].push([parentType, selection, fieldDef]);
         break;
+      }
       case Kind.FRAGMENT_SPREAD:
         fragmentNames[selection.name.value] = true;
         break;
-      case Kind.INLINE_FRAGMENT:
+      case Kind.INLINE_FRAGMENT: {
         const typeCondition = selection.typeCondition;
         const inlineFragmentType = typeCondition
           ? typeFromAST(context.getSchema(), typeCondition)
@@ -779,6 +778,7 @@ function _collectFieldsAndFragmentNames(
           fragmentNames,
         );
         break;
+      }
     }
   }
 }

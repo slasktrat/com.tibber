@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -7,15 +7,19 @@
  * @flow strict
  */
 
+import inspect from '../jsutils/inspect';
 import { Kind } from '../language/kinds';
-import type {
-  NamedTypeNode,
-  ListTypeNode,
-  NonNullTypeNode,
+import {
+  type NamedTypeNode,
+  type ListTypeNode,
+  type NonNullTypeNode,
 } from '../language/ast';
-import { GraphQLList, GraphQLNonNull } from '../type/definition';
-import type { GraphQLNamedType } from '../type/definition';
-import type { GraphQLSchema } from '../type/schema';
+import {
+  type GraphQLNamedType,
+  GraphQLList,
+  GraphQLNonNull,
+} from '../type/definition';
+import { type GraphQLSchema } from '../type/schema';
 
 /**
  * Given a Schema and an AST node describing a type, return a GraphQLType
@@ -51,6 +55,8 @@ export function typeFromAST(schema, typeNode) {
   if (typeNode.kind === Kind.NAMED_TYPE) {
     return schema.getType(typeNode.name.value);
   }
+
+  // Not reachable. All possible type nodes have been considered.
   /* istanbul ignore next */
-  throw new Error(`Unexpected type kind: ${(typeNode.kind: empty)}.`);
+  throw new Error(`Unexpected type node: "${inspect((typeNode: empty))}".`);
 }

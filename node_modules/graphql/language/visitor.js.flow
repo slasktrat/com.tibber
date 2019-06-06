@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -8,8 +8,8 @@
  */
 
 import inspect from '../jsutils/inspect';
-import type { ASTNode, ASTKindToNode } from './ast';
-import type { TypeInfo } from '../utilities/TypeInfo';
+import { type ASTNode, type ASTKindToNode } from './ast';
+import { type TypeInfo } from '../utilities/TypeInfo';
 
 /**
  * A visitor is provided to visit, it contains the collection of
@@ -256,10 +256,8 @@ export function visit(
           node = node.slice();
         } else {
           const clone = {};
-          for (const k in node) {
-            if (node.hasOwnProperty(k)) {
-              clone[k] = node[k];
-            }
+          for (const k of Object.keys(node)) {
+            clone[k] = node[k];
           }
           node = clone;
         }

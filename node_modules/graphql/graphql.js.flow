@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -7,16 +7,19 @@
  * @flow strict
  */
 
+import isPromise from './jsutils/isPromise';
 import { validateSchema } from './type/validate';
 import { parse } from './language/parser';
 import { validate } from './validation/validate';
-import { execute } from './execution/execute';
-import type { ObjMap } from './jsutils/ObjMap';
-import type { Source } from './language/source';
-import type { GraphQLFieldResolver } from './type/definition';
-import type { GraphQLSchema } from './type/schema';
-import type { ExecutionResult } from './execution/execute';
-import type { MaybePromise } from './jsutils/MaybePromise';
+import { type ExecutionResult, execute } from './execution/execute';
+import { type ObjMap } from './jsutils/ObjMap';
+import { type Source } from './language/source';
+import {
+  type GraphQLFieldResolver,
+  type GraphQLTypeResolver,
+} from './type/definition';
+import { type GraphQLSchema } from './type/schema';
+import { type PromiseOrValue } from './jsutils/PromiseOrValue';
 
 /**
  * This is the primary entry point function for fulfilling GraphQL operations
@@ -52,6 +55,10 @@ import type { MaybePromise } from './jsutils/MaybePromise';
  *    A resolver function to use when one is not provided by the schema.
  *    If not provided, the default field resolver is used (which looks for a
  *    value or method on the source value with the field's name).
+ * typeResolver:
+ *    A type resolver function to use when none is provided by the schema.
+ *    If not provided, the default type resolver is used (which looks for a
+ *    `__typename` field or alternatively calls the `isTypeOf` method).
  */
 export type GraphQLArgs = {|
   schema: GraphQLSchema,
@@ -61,6 +68,7 @@ export type GraphQLArgs = {|
   variableValues?: ?ObjMap<mixed>,
   operationName?: ?string,
   fieldResolver?: ?GraphQLFieldResolver<any, any>,
+  typeResolver?: ?GraphQLTypeResolver<any, any>,
 |};
 declare function graphql(GraphQLArgs, ..._: []): Promise<ExecutionResult>;
 /* eslint-disable no-redeclare */
@@ -72,6 +80,7 @@ declare function graphql(
   variableValues?: ?ObjMap<mixed>,
   operationName?: ?string,
   fieldResolver?: ?GraphQLFieldResolver<any, any>,
+  typeResolver?: ?GraphQLTypeResolver<any, any>,
 ): Promise<ExecutionResult>;
 export function graphql(
   argsOrSchema,
@@ -81,6 +90,7 @@ export function graphql(
   variableValues,
   operationName,
   fieldResolver,
+  typeResolver,
 ) {
   /* eslint-enable no-redeclare */
   // Always return a Promise for a consistent API.
@@ -96,6 +106,7 @@ export function graphql(
             argsOrSchema.variableValues,
             argsOrSchema.operationName,
             argsOrSchema.fieldResolver,
+            argsOrSchema.typeResolver,
           )
         : graphqlImpl(
             argsOrSchema,
@@ -105,6 +116,7 @@ export function graphql(
             variableValues,
             operationName,
             fieldResolver,
+            typeResolver,
           ),
     ),
   );
@@ -126,6 +138,7 @@ declare function graphqlSync(
   variableValues?: ?ObjMap<mixed>,
   operationName?: ?string,
   fieldResolver?: ?GraphQLFieldResolver<any, any>,
+  typeResolver?: ?GraphQLTypeResolver<any, any>,
 ): ExecutionResult;
 export function graphqlSync(
   argsOrSchema,
@@ -135,6 +148,7 @@ export function graphqlSync(
   variableValues,
   operationName,
   fieldResolver,
+  typeResolver,
 ) {
   /* eslint-enable no-redeclare */
   // Extract arguments from object args if provided.
@@ -148,6 +162,7 @@ export function graphqlSync(
           argsOrSchema.variableValues,
           argsOrSchema.operationName,
           argsOrSchema.fieldResolver,
+          argsOrSchema.typeResolver,
         )
       : graphqlImpl(
           argsOrSchema,
@@ -157,10 +172,11 @@ export function graphqlSync(
           variableValues,
           operationName,
           fieldResolver,
+          typeResolver,
         );
 
   // Assert that the execution was synchronous.
-  if (result.then) {
+  if (isPromise(result)) {
     throw new Error('GraphQL execution failed to complete synchronously.');
   }
 
@@ -175,7 +191,8 @@ function graphqlImpl(
   variableValues,
   operationName,
   fieldResolver,
-): MaybePromise<ExecutionResult> {
+  typeResolver,
+): PromiseOrValue<ExecutionResult> {
   // Validate Schema
   const schemaValidationErrors = validateSchema(schema);
   if (schemaValidationErrors.length > 0) {
@@ -205,5 +222,6 @@ function graphqlImpl(
     variableValues,
     operationName,
     fieldResolver,
+    typeResolver,
   );
 }

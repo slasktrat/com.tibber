@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -7,20 +7,21 @@
  * @flow strict
  */
 
+import objectValues from '../polyfills/objectValues';
+import inspect from '../jsutils/inspect';
 import keyMap from '../jsutils/keyMap';
 import isInvalid from '../jsutils/isInvalid';
-import objectValues from '../jsutils/objectValues';
-import type { ObjMap } from '../jsutils/ObjMap';
+import { type ObjMap } from '../jsutils/ObjMap';
 import { Kind } from '../language/kinds';
 import {
+  type GraphQLInputType,
   isScalarType,
   isEnumType,
   isInputObjectType,
   isListType,
   isNonNullType,
 } from '../type/definition';
-import type { GraphQLInputType } from '../type/definition';
-import type { ValueNode } from '../language/ast';
+import { type ValueNode } from '../language/ast';
 
 /**
  * Produces a JavaScript value given a GraphQL Value AST.
@@ -165,8 +166,9 @@ export function valueFromAST(
     return result;
   }
 
+  // Not reachable. All possible input types have been considered.
   /* istanbul ignore next */
-  throw new Error(`Unknown type: ${(type: empty)}.`);
+  throw new Error(`Unexpected input type: "${inspect((type: empty))}".`);
 }
 
 // Returns true if the provided valueNode is a variable which is not defined

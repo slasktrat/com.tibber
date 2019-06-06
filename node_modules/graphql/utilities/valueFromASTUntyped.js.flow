@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -7,11 +7,12 @@
  * @flow strict
  */
 
+import inspect from '../jsutils/inspect';
 import keyValMap from '../jsutils/keyValMap';
 import isInvalid from '../jsutils/isInvalid';
-import type { ObjMap } from '../jsutils/ObjMap';
+import { type ObjMap } from '../jsutils/ObjMap';
 import { Kind } from '../language/kinds';
-import type { ValueNode } from '../language/ast';
+import { type ValueNode } from '../language/ast';
 
 /**
  * Produces a JavaScript value given a GraphQL Value AST.
@@ -52,12 +53,15 @@ export function valueFromASTUntyped(
         field => field.name.value,
         field => valueFromASTUntyped(field.value, variables),
       );
-    case Kind.VARIABLE:
+    case Kind.VARIABLE: {
       const variableName = valueNode.name.value;
       return variables && !isInvalid(variables[variableName])
         ? variables[variableName]
         : undefined;
+    }
   }
+
+  // Not reachable. All possible value nodes have been considered.
   /* istanbul ignore next */
-  throw new Error('Unexpected value kind: ' + (valueNode.kind: empty));
+  throw new Error(`Unexpected value node: "${inspect((valueNode: empty))}".`);
 }

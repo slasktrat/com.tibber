@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -8,13 +8,14 @@
  */
 
 import {
+  type GraphQLType,
+  type GraphQLCompositeType,
   isObjectType,
   isListType,
   isNonNullType,
   isAbstractType,
 } from '../type/definition';
-import type { GraphQLType, GraphQLCompositeType } from '../type/definition';
-import type { GraphQLSchema } from '../type/schema';
+import { type GraphQLSchema } from '../type/schema';
 
 /**
  * Provided two types, return true if the types are equal (invariant).

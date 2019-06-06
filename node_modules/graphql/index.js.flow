@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -37,8 +37,9 @@ export { graphql, graphqlSync } from './graphql';
 
 // Create and operate on GraphQL type definitions and schema.
 export {
-  GraphQLSchema,
   // Definitions
+  GraphQLSchema,
+  GraphQLDirective,
   GraphQLScalarType,
   GraphQLObjectType,
   GraphQLInterfaceType,
@@ -47,10 +48,7 @@ export {
   GraphQLInputObjectType,
   GraphQLList,
   GraphQLNonNull,
-  GraphQLDirective,
-  // "Enum" of Type Kinds
-  TypeKind,
-  // Scalars
+  // Standard GraphQL Scalars
   specifiedScalarTypes,
   GraphQLInt,
   GraphQLFloat,
@@ -62,12 +60,10 @@ export {
   GraphQLIncludeDirective,
   GraphQLSkipDirective,
   GraphQLDeprecatedDirective,
+  // "Enum" of Type Kinds
+  TypeKind,
   // Constant Deprecation Reason
   DEFAULT_DEPRECATION_REASON,
-  // Meta-field definitions.
-  SchemaMetaFieldDef,
-  TypeMetaFieldDef,
-  TypeNameMetaFieldDef,
   // GraphQL Types for introspection.
   introspectionTypes,
   __Schema,
@@ -78,6 +74,10 @@ export {
   __InputValue,
   __EnumValue,
   __TypeKind,
+  // Meta-field definitions.
+  SchemaMetaFieldDef,
+  TypeMetaFieldDef,
+  TypeNameMetaFieldDef,
   // Predicates
   isSchema,
   isDirective,
@@ -104,6 +104,8 @@ export {
   isIntrospectionType,
   isSpecifiedDirective,
   // Assertions
+  assertSchema,
+  assertDirective,
   assertType,
   assertScalarType,
   assertObjectType,
@@ -141,6 +143,7 @@ export type {
   GraphQLNamedType,
   Thunk,
   GraphQLSchemaConfig,
+  GraphQLDirectiveConfig,
   GraphQLArgument,
   GraphQLArgumentConfig,
   GraphQLEnumTypeConfig,
@@ -166,7 +169,6 @@ export type {
   GraphQLScalarTypeConfig,
   GraphQLTypeResolver,
   GraphQLUnionTypeConfig,
-  GraphQLDirectiveConfig,
   GraphQLScalarSerializer,
   GraphQLScalarValueParser,
   GraphQLScalarLiteralParser,
@@ -176,6 +178,9 @@ export type {
 export {
   Source,
   getLocation,
+  // Lex
+  createLexer,
+  TokenKind,
   // Parse
   parse,
   parseValue,
@@ -187,10 +192,9 @@ export {
   visitInParallel,
   visitWithTypeInfo,
   getVisitFn,
-  Kind,
-  TokenKind,
-  DirectiveLocation,
   BREAK,
+  Kind,
+  DirectiveLocation,
   // Predicates
   isDefinitionNode,
   isExecutableDefinitionNode,
@@ -207,16 +211,20 @@ export type {
   Lexer,
   ParseOptions,
   SourceLocation,
+  Location,
+  Token,
+  TokenKindEnum,
+  KindEnum,
+  DirectiveLocationEnum,
   // Visitor utilities
   ASTVisitor,
   Visitor,
   VisitFn,
   VisitorKeyMap,
   // AST nodes
-  Location,
-  Token,
   ASTNode,
   ASTKindToNode,
+  // Each kind of AST node
   NameNode,
   DocumentNode,
   DefinitionNode,
@@ -270,15 +278,13 @@ export type {
   UnionTypeExtensionNode,
   EnumTypeExtensionNode,
   InputObjectTypeExtensionNode,
-  KindEnum,
-  TokenKindEnum,
-  DirectiveLocationEnum,
 } from './language';
 
 // Execute GraphQL queries.
 export {
   execute,
   defaultFieldResolver,
+  defaultTypeResolver,
   responsePathAsArray,
   getDirectiveValues,
 } from './execution';
@@ -287,7 +293,7 @@ export type { ExecutionArgs, ExecutionResult } from './execution';
 
 export { subscribe, createSourceEventStream } from './subscription';
 
-// Validate GraphQL queries.
+// Validate GraphQL documents.
 export {
   validate,
   ValidationContext,
@@ -324,7 +330,13 @@ export {
 export type { ValidationRule } from './validation';
 
 // Create, format, and print GraphQL errors.
-export { GraphQLError, formatError, printError } from './error';
+export {
+  GraphQLError,
+  syntaxError,
+  locatedError,
+  printError,
+  formatError,
+} from './error';
 
 export type { GraphQLFormattedError } from './error';
 
@@ -333,13 +345,13 @@ export {
   // Produce the GraphQL query recommended for a full schema introspection.
   // Accepts optional IntrospectionOptions.
   getIntrospectionQuery,
-  // @deprecated: use getIntrospectionQuery - will be removed in v15
+  // @deprecated: use getIntrospectionQuery - will be removed in v15.
   introspectionQuery,
-  // Gets the target Operation from a Document
+  // Gets the target Operation from a Document.
   getOperationAST,
   // Gets the Type for the target Operation AST.
   getOperationRootType,
-  // Convert a GraphQLSchema to an IntrospectionQuery
+  // Convert a GraphQLSchema to an IntrospectionQuery.
   introspectionFromSchema,
   // Build a GraphQLSchema from an introspection result.
   buildClientSchema,
@@ -348,7 +360,7 @@ export {
   // Build a GraphQLSchema from a GraphQL schema language document.
   buildSchema,
   // @deprecated: Get the description from a schema AST node and supports legacy
-  // syntax for specifying descriptions - will be removed in v16
+  // syntax for specifying descriptions - will be removed in v16.
   getDescription,
   // Extends an existing GraphQLSchema from a parsed GraphQL Schema
   // language AST.
@@ -357,11 +369,11 @@ export {
   lexicographicSortSchema,
   // Print a GraphQLSchema to GraphQL Schema language.
   printSchema,
+  // Print a GraphQLType to GraphQL Schema language.
+  printType,
   // Prints the built-in introspection schema in the Schema Language
   // format.
   printIntrospectionSchema,
-  // Print a GraphQLType to GraphQL Schema language.
-  printType,
   // Create a GraphQLType from a GraphQL language AST.
   typeFromAST,
   // Create a JavaScript value from a GraphQL language AST with a Type.
@@ -383,6 +395,9 @@ export {
   concatAST,
   // Separates an AST into an AST per Operation.
   separateOperations,
+  // Strips characters that are not significant to the validity or execution
+  // of a GraphQL document.
+  stripIgnoredCharacters,
   // Comparators for types
   isEqualType,
   isTypeSubTypeOf,
@@ -392,38 +407,38 @@ export {
   // Determine if a string is a valid GraphQL name.
   isValidNameError,
   // Compares two GraphQLSchemas and detects breaking changes.
-  findBreakingChanges,
-  findDangerousChanges,
   BreakingChangeType,
   DangerousChangeType,
+  findBreakingChanges,
+  findDangerousChanges,
   // Report all deprecated usage within a GraphQL document.
   findDeprecatedUsages,
 } from './utilities';
 
 export type {
+  IntrospectionOptions,
+  IntrospectionQuery,
+  IntrospectionSchema,
+  IntrospectionType,
+  IntrospectionInputType,
+  IntrospectionOutputType,
+  IntrospectionScalarType,
+  IntrospectionObjectType,
+  IntrospectionInterfaceType,
+  IntrospectionUnionType,
+  IntrospectionEnumType,
+  IntrospectionInputObjectType,
+  IntrospectionTypeRef,
+  IntrospectionInputTypeRef,
+  IntrospectionOutputTypeRef,
+  IntrospectionNamedTypeRef,
+  IntrospectionListTypeRef,
+  IntrospectionNonNullTypeRef,
+  IntrospectionField,
+  IntrospectionInputValue,
+  IntrospectionEnumValue,
+  IntrospectionDirective,
   BuildSchemaOptions,
   BreakingChange,
   DangerousChange,
-  IntrospectionOptions,
-  IntrospectionDirective,
-  IntrospectionEnumType,
-  IntrospectionEnumValue,
-  IntrospectionField,
-  IntrospectionInputObjectType,
-  IntrospectionInputType,
-  IntrospectionInputTypeRef,
-  IntrospectionInputValue,
-  IntrospectionInterfaceType,
-  IntrospectionListTypeRef,
-  IntrospectionNamedTypeRef,
-  IntrospectionNonNullTypeRef,
-  IntrospectionObjectType,
-  IntrospectionOutputType,
-  IntrospectionOutputTypeRef,
-  IntrospectionQuery,
-  IntrospectionScalarType,
-  IntrospectionSchema,
-  IntrospectionType,
-  IntrospectionTypeRef,
-  IntrospectionUnionType,
 } from './utilities';

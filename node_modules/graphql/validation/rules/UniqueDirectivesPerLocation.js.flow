@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -7,10 +7,10 @@
  * @flow strict
  */
 
-import type { ASTValidationContext } from '../ValidationContext';
+import { type ASTValidationContext } from '../ValidationContext';
 import { GraphQLError } from '../../error/GraphQLError';
-import type { DirectiveNode } from '../../language/ast';
-import type { ASTVisitor } from '../../language/visitor';
+import { type DirectiveNode } from '../../language/ast';
+import { type ASTVisitor } from '../../language/visitor';
 
 export function duplicateDirectiveMessage(directiveName: string): string {
   return (

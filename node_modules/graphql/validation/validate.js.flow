@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -8,15 +8,19 @@
  */
 
 import invariant from '../jsutils/invariant';
-import type { GraphQLError } from '../error';
+import { type GraphQLError } from '../error';
 import { visit, visitInParallel, visitWithTypeInfo } from '../language/visitor';
-import type { DocumentNode } from '../language/ast';
-import type { GraphQLSchema } from '../type/schema';
+import { type DocumentNode } from '../language/ast';
+import { type GraphQLSchema } from '../type/schema';
 import { assertValidSchema } from '../type/validate';
 import { TypeInfo } from '../utilities/TypeInfo';
 import { specifiedRules, specifiedSDLRules } from './specifiedRules';
-import type { SDLValidationRule, ValidationRule } from './ValidationContext';
-import { SDLValidationContext, ValidationContext } from './ValidationContext';
+import {
+  type SDLValidationRule,
+  type ValidationRule,
+  SDLValidationContext,
+  ValidationContext,
+} from './ValidationContext';
 
 /**
  * Implements the "Validation" section of the spec.

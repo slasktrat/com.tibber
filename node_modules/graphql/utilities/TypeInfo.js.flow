@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015-present, Facebook, Inc.
+ * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
@@ -7,8 +7,17 @@
  * @flow strict
  */
 
+import find from '../polyfills/find';
 import { Kind } from '../language/kinds';
 import {
+  type GraphQLType,
+  type GraphQLInputType,
+  type GraphQLOutputType,
+  type GraphQLCompositeType,
+  type GraphQLField,
+  type GraphQLArgument,
+  type GraphQLInputField,
+  type GraphQLEnumValue,
   isObjectType,
   isInterfaceType,
   isEnumType,
@@ -20,26 +29,15 @@ import {
   getNullableType,
   getNamedType,
 } from '../type/definition';
-import type {
-  GraphQLType,
-  GraphQLInputType,
-  GraphQLOutputType,
-  GraphQLCompositeType,
-  GraphQLField,
-  GraphQLArgument,
-  GraphQLInputField,
-  GraphQLEnumValue,
-} from '../type/definition';
-import type { GraphQLDirective } from '../type/directives';
+import { type GraphQLDirective } from '../type/directives';
 import {
   SchemaMetaFieldDef,
   TypeMetaFieldDef,
   TypeNameMetaFieldDef,
 } from '../type/introspection';
-import type { GraphQLSchema } from '../type/schema';
-import type { ASTNode, FieldNode } from '../language/ast';
+import { type GraphQLSchema } from '../type/schema';
+import { type ASTNode, type FieldNode } from '../language/ast';
 import { typeFromAST } from './typeFromAST';
-import find from '../jsutils/find';
 
 /**
  * TypeInfo is a utility class which, given a GraphQL schema, can keep track
@@ -146,13 +144,14 @@ export class TypeInfo {
     // checked before continuing since TypeInfo is used as part of validation
     // which occurs before guarantees of schema and document validity.
     switch (node.kind) {
-      case Kind.SELECTION_SET:
+      case Kind.SELECTION_SET: {
         const namedType: mixed = getNamedType(this.getType());
         this._parentTypeStack.push(
           isCompositeType(namedType) ? namedType : undefined,
         );
         break;
-      case Kind.FIELD:
+      }
+      case Kind.FIELD: {
         const parentType = this.getParentType();
         let fieldDef;
         let fieldType: mixed;
@@ -165,10 +164,11 @@ export class TypeInfo {
         this._fieldDefStack.push(fieldDef);
         this._typeStack.push(isOutputType(fieldType) ? fieldType : undefined);
         break;
+      }
       case Kind.DIRECTIVE:
         this._directive = schema.getDirective(node.name.value);
         break;
-      case Kind.OPERATION_DEFINITION:
+      case Kind.OPERATION_DEFINITION: {
         let type: mixed;
         if (node.operation === 'query') {
           type = schema.getQueryType();
@@ -179,21 +179,24 @@ export class TypeInfo {
         }
         this._typeStack.push(isObjectType(type) ? type : undefined);
         break;
+      }
       case Kind.INLINE_FRAGMENT:
-      case Kind.FRAGMENT_DEFINITION:
+      case Kind.FRAGMENT_DEFINITION: {
         const typeConditionAST = node.typeCondition;
         const outputType: mixed = typeConditionAST
           ? typeFromAST(schema, typeConditionAST)
           : getNamedType(this.getType());
         this._typeStack.push(isOutputType(outputType) ? outputType : undefined);
         break;
-      case Kind.VARIABLE_DEFINITION:
+      }
+      case Kind.VARIABLE_DEFINITION: {
         const inputType: mixed = typeFromAST(schema, node.type);
         this._inputTypeStack.push(
           isInputType(inputType) ? inputType : undefined,
         );
         break;
-      case Kind.ARGUMENT:
+      }
+      case Kind.ARGUMENT: {
         let argDef;
         let argType: mixed;
         const fieldOrDirective = this.getDirective() || this.getFieldDef();
@@ -210,7 +213,8 @@ export class TypeInfo {
         this._defaultValueStack.push(argDef ? argDef.defaultValue : undefined);
         this._inputTypeStack.push(isInputType(argType) ? argType : undefined);
         break;
-      case Kind.LIST:
+      }
+      case Kind.LIST: {
         const listType: mixed = getNullableType(this.getInputType());
         const itemType: mixed = isListType(listType)
           ? listType.ofType
@@ -219,7 +223,8 @@ export class TypeInfo {
         this._defaultValueStack.push(undefined);
         this._inputTypeStack.push(isInputType(itemType) ? itemType : undefined);
         break;
-      case Kind.OBJECT_FIELD:
+      }
+      case Kind.OBJECT_FIELD: {
         const objectType: mixed = getNamedType(this.getInputType());
         let inputFieldType: GraphQLInputType | void;
         let inputField: GraphQLInputField | void;
@@ -236,7 +241,8 @@ export class TypeInfo {
           isInputType(inputFieldType) ? inputFieldType : undefined,
         );
         break;
-      case Kind.ENUM:
+      }
+      case Kind.ENUM: {
         const enumType: mixed = getNamedType(this.getInputType());
         let enumValue;
         if (isEnumType(enumType)) {
@@ -244,6 +250,7 @@ export class TypeInfo {
         }
         this._enumValue = enumValue;
         break;
+      }
     }
   }
 
