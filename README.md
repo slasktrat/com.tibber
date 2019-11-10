@@ -45,6 +45,9 @@ Integration with Tibber, with Pulse support!
 &nbsp;
 ### Release Notes
 
+#### 1.0.13
+- Support for Athom's new Energy API - marking Pulse as a cumulative device
+&nbsp;
 #### 1.0.12
 - Fixed app crashing on api timeout #14
 &nbsp;
